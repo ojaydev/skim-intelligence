@@ -2,6 +2,10 @@
 
 **Title:** Skim Intelligence — Autonomous Prediction Market Liquidity Engine
 
+**Demo video:** https://youtu.be/YaIPCAKgAr4 ·
+**Live demo:** https://skim-intelligence.round-wildflower-4414.workers.dev ·
+**Repo:** https://github.com/ojaydev/skim-intelligence
+
 Prediction markets pay bots to exist — through maker rebates, liquidity
 rewards, and mint/burn arbitrage. These edges are structural and
 direction-neutral, but accessing them requires quant infrastructure retail

@@ -12,6 +12,7 @@ Built on the **Anthropic Messages API with tool use**, **streaming**, and
 + Durable Objects. Not to be confused with Claude Managed Agents (a separate
 Anthropic product for container-hosted long-running sessions).
 
+▶ **[Watch the 3-min demo on YouTube](https://youtu.be/YaIPCAKgAr4)** ·
 [Live demo](https://skim-intelligence.round-wildflower-4414.workers.dev) ·
 [About page](./docs/about.html) ·
 [Dashboard preview](./docs/skim.html) ·
