@@ -41,10 +41,11 @@ export const colors = {
   amber: "#ffb347",
 };
 
-// Composition base — referenced by every scene
+// Composition base — referenced by every scene. 186s total: 185s of
+// voiceover plus a 1s breathing tail on the outro.
 export const VIDEO = {
   width: 1920,
   height: 1080,
   fps: 30,
-  durationFrames: 5400, // 3 min @ 30fps
+  durationFrames: 5580, // 186s @ 30fps
 };

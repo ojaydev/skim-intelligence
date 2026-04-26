@@ -1,4 +1,4 @@
-import { AbsoluteFill } from "remotion";
+import { AbsoluteFill, Audio, staticFile } from "remotion";
 import { TransitionSeries, linearTiming } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 
@@ -21,7 +21,8 @@ const transitionTiming = linearTiming({ durationInFrames: TRANSITION_FRAMES });
 
 const sceneFrames = (seconds: number) => Math.round(seconds * FPS);
 
-// Beats — match submission-draft.md's 3-min script.
+// Beats — match the recorded voiceover pacing (~185s). A few seconds of
+// extra outro give the closing line space to land before the cut.
 const SCENE_DURATIONS = {
   title: sceneFrames(6),
   problem: sceneFrames(22),
@@ -29,13 +30,14 @@ const SCENE_DURATIONS = {
   liveReasoning: sceneFrames(58), // CORE BEAT
   riskRejection: sceneFrames(20),
   autoCycle: sceneFrames(22),
-  reporter: sceneFrames(20),
-  outro: sceneFrames(14),
+  reporter: sceneFrames(22),
+  outro: sceneFrames(18),
 };
 
 export const SkimDemo = () => {
   return (
     <AbsoluteFill style={{ background: colors.bg }}>
+      <Audio src={staticFile("voiceover.mp3")} />
       <TransitionSeries>
         <TransitionSeries.Sequence durationInFrames={SCENE_DURATIONS.title}>
           <Title />

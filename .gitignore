@@ -29,3 +29,6 @@ submission-draft.md
 
 # Rendered video output (large MP4s). Source code lives in apps/video/src/
 apps/video/out/
+
+# Generated TTS audio — re-create with apps/video/generate-voiceover.py
+apps/video/public/voiceover.mp3
