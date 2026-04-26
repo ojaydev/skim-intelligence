@@ -1,8 +1,8 @@
-import { AbsoluteFill, Audio, staticFile } from "remotion";
+import { AbsoluteFill, Audio, interpolate, staticFile } from "remotion";
 import { TransitionSeries, linearTiming } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 
-import { colors } from "./Brand";
+import { colors, VIDEO } from "./Brand";
 import { Title } from "./scenes/Title";
 import { Problem } from "./scenes/Problem";
 import { Agents } from "./scenes/Agents";
@@ -21,8 +21,9 @@ const transitionTiming = linearTiming({ durationInFrames: TRANSITION_FRAMES });
 
 const sceneFrames = (seconds: number) => Math.round(seconds * FPS);
 
-// Beats — match the recorded voiceover pacing (~185s). A few seconds of
-// extra outro give the closing line space to land before the cut.
+// Beats — match the recorded voiceover pacing (177.6s). The outro is
+// trimmed because Brian's delivery is faster than Adam's; the closing
+// "Hackathon, April 2026" line lands ~1.5s before the final cut.
 const SCENE_DURATIONS = {
   title: sceneFrames(6),
   problem: sceneFrames(22),
@@ -30,14 +31,45 @@ const SCENE_DURATIONS = {
   liveReasoning: sceneFrames(58), // CORE BEAT
   riskRejection: sceneFrames(20),
   autoCycle: sceneFrames(22),
-  reporter: sceneFrames(22),
-  outro: sceneFrames(18),
+  reporter: sceneFrames(20),
+  outro: sceneFrames(13),
+};
+
+// Music fade envelope — sits under the voiceover at ~10% volume with a
+// soft fade-in over the first second and a 1.5s fade-out at the end.
+const MUSIC_VOLUME = 0.1;
+const FADE_IN_FRAMES = 30;
+const FADE_OUT_FRAMES = 45;
+
+const musicVolume = (f: number): number => {
+  if (f <= FADE_IN_FRAMES) {
+    return interpolate(f, [0, FADE_IN_FRAMES], [0, MUSIC_VOLUME], {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+    });
+  }
+  const fadeOutStart = VIDEO.durationFrames - FADE_OUT_FRAMES;
+  if (f >= fadeOutStart) {
+    return interpolate(
+      f,
+      [fadeOutStart, VIDEO.durationFrames],
+      [MUSIC_VOLUME, 0],
+      { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+    );
+  }
+  return MUSIC_VOLUME;
 };
 
 export const SkimDemo = () => {
   return (
     <AbsoluteFill style={{ background: colors.bg }}>
       <Audio src={staticFile("voiceover.mp3")} />
+      <Audio
+        src={staticFile("music.mp3")}
+        loop
+        loopVolumeCurveBehavior="extend"
+        volume={musicVolume}
+      />
       <TransitionSeries>
         <TransitionSeries.Sequence durationInFrames={SCENE_DURATIONS.title}>
           <Title />

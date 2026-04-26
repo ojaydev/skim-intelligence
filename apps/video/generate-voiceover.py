@@ -15,7 +15,7 @@ import sys
 import urllib.request
 from pathlib import Path
 
-VOICE_ID = "pNInz6obpgDQGcFmaJgB"  # Adam
+VOICE_ID = "nPczCjzI2devNBz1zQrb"  # Brian — warm, modern, podcast-grade narration
 MODEL_ID = "eleven_multilingual_v2"
 
 # Single-string narration. Em-dashes and full stops give the TTS natural
@@ -60,9 +60,12 @@ def main() -> None:
         "text": NARRATION,
         "model_id": MODEL_ID,
         "voice_settings": {
-            "stability": 0.6,           # slightly above default for steady narration
-            "similarity_boost": 0.75,
-            "style": 0.0,
+            # Lower stability gives more emotional range / natural pacing.
+            # Style adds subtle expressiveness so it doesn't feel like a
+            # robotic documentary read.
+            "stability": 0.42,
+            "similarity_boost": 0.85,
+            "style": 0.35,
             "use_speaker_boost": True,
         },
     }

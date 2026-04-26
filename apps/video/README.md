@@ -36,8 +36,10 @@ pnpm --filter @skim/video typecheck
 
 ## Voiceover
 
-The narration is generated via ElevenLabs TTS with the Adam voice
-(`pNInz6obpgDQGcFmaJgB`) and the `eleven_multilingual_v2` model.
+The narration is generated via ElevenLabs TTS with the Brian voice
+(`nPczCjzI2devNBz1zQrb`, warm modern podcast-style) and the
+`eleven_multilingual_v2` model. Settings dial up expressiveness
+(`stability: 0.42`, `style: 0.35`) so the read doesn't feel robotic.
 
 ```bash
 # Requires ELEVENLABS_API_KEY in repo-root .env
@@ -48,6 +50,18 @@ The generated `public/voiceover.mp3` is **gitignored** because it's a
 regenerable artefact — re-run the script to recreate it on a fresh
 clone. The full script lives in `voiceover-script.md` for review and
 hand-edits.
+
+## Background music
+
+`SkimDemo.tsx` expects a 1-3 minute royalty-free instrumental track at
+`public/music.mp3` (also gitignored). It is mixed under the voice at
+`MUSIC_VOLUME = 0.1` (10%) with a 1-second fade-in and a 1.5-second
+fade-out, looped via `loopVolumeCurveBehavior="extend"` so the fade
+envelope spans the full composition rather than each loop.
+
+Bring your own track — Pixabay Music, the YouTube Audio Library, or
+Uppbeat all have suitable ambient-electronic instrumentals. Avoid
+anything with vocals (it will compete with the narration).
 
 ## Pacing
 

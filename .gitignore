@@ -32,3 +32,6 @@ apps/video/out/
 
 # Generated TTS audio — re-create with apps/video/generate-voiceover.py
 apps/video/public/voiceover.mp3
+
+# User-provided music track — bring your own (royalty-free / licensed)
+apps/video/public/music.mp3
