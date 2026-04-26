@@ -21,3 +21,11 @@ dist/
 # Build/transfer bundles
 *.tar.gz
 *.zip
+
+# Local submission draft — kept out of the public repo (filename intentionally
+# distinct from the committed SUBMISSION.md so Windows' case-insensitive FS
+# doesn't collide).
+submission-draft.md
+
+# Rendered video output (large MP4s). Source code lives in apps/video/src/
+apps/video/out/

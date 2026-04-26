@@ -1,0 +1,26 @@
+{
+  "name": "@skim/video",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Remotion-rendered demo video for the Anthropic Opus 4.7 Hackathon submission.",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts SkimDemo out/skim-demo.mp4 --concurrency=4 --jpeg-quality=92",
+    "render:1080p60": "remotion render src/index.ts SkimDemo out/skim-demo-60.mp4 --concurrency=4 --jpeg-quality=92 --fps=60",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.451",
+    "@remotion/cli": "4.0.451",
+    "@remotion/google-fonts": "4.0.451",
+    "@remotion/transitions": "4.0.451",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "4.0.451"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "typescript": "^5.6.3"
+  }
+}

@@ -214,6 +214,7 @@ code { font-family: 'DM Mono', monospace; font-size: 0.9em; color: var(--cyan); 
 .share-footer {
   display: flex; justify-content: space-between; align-items: center;
   border-top: 1px solid var(--border); padding-top: 12px;
+  gap: 10px; flex-wrap: wrap;
 }
 .share-period { font-size: 10px; color: var(--text-faint); }
 .share-narrative {
@@ -261,11 +262,71 @@ code { font-family: 'DM Mono', monospace; font-size: 0.9em; color: var(--cyan); 
   .span4 { grid-column: span 2; }
   .ws-bar { grid-column: span 2; }
   .agent-grid { grid-template-columns: 1fr; }
+  .tile { padding: 14px 16px; }
+  .tile-value { font-size: 30px; }
 }
-@media (max-width: 520px) {
-  .main { grid-template-columns: 1fr; }
+@media (max-width: 640px) {
+  /* Single-column layout for phones */
+  .main { grid-template-columns: 1fr; padding: 12px; gap: 10px; }
   .span2, .span4, .ws-bar { grid-column: span 1; }
-  .header { padding: 0 14px; }
-  .logo { font-size: 15px; }
+
+  /* Header — tighter spacing, hide noisy status row */
+  .header { padding: 0 12px; height: 44px; }
+  .shell { grid-template-rows: 44px 1fr; }
+  .logo { font-size: 14px; letter-spacing: .08em; }
+  .header-right { gap: 10px; }
   .status-row { display: none; }
+  .mode-badge { padding: 3px 8px; font-size: 10px; gap: 5px; }
+
+  /* WS status bar — wraps to two rows; smaller separators */
+  .ws-bar { gap: 10px 14px; padding: 6px 12px; }
+  .ws-sep { display: none; }
+  .ws-conn-value { font-size: 9.5px; }
+
+  /* Tiles — shrink display number so big P&L fits at 320px wide */
+  .tile { padding: 12px 14px; }
+  .tile-value { font-size: 26px; }
+  .tile-sub { font-size: 9px; }
+
+  /* Long-running panels — phone-friendly heights */
+  .reasoning-body { height: 220px; padding: 12px 14px; font-size: 11px; line-height: 1.55; }
+  .event-list { height: 200px; }
+  .panel-header { padding: 10px 14px; }
+  .panel-body { padding: 10px 14px; }
+  .reasoning-summary { margin: 10px 14px; padding: 8px 10px; font-size: 11px; }
+  .depth-viewer { padding: 6px 14px 10px; }
+  .depth-viewer svg, .depth-viewer img { max-height: 160px; }
+
+  /* Admin row buttons — wrap instead of horizontal-scroll */
+  .admin-row { flex-wrap: wrap; padding: 8px 14px; }
+  .btn { padding: 6px 10px; font-size: 9.5px; }
+
+  /* Opportunity queue — shorter score bar to give name more room */
+  .opp-bar-wrap { width: 50px; }
+  .opp-name { font-size: 11.5px; }
+  .opp-sub { font-size: 9.5px; }
+
+  /* Share card — display headline scaled for narrow viewports */
+  .share-card { padding: 16px 16px; }
+  .share-headline { font-size: 26px; }
+  .share-subline { font-size: 10px; }
+  .share-breakdown { gap: 8px; }
+  .share-bucket-value { font-size: 12px; }
+  .share-narrative { padding: 8px 10px; font-size: 11px; line-height: 1.55; }
+
+  /* Wallet — keep input + button on one row, balance smaller */
+  .wallet-balance { font-size: 26px; }
+  .wallet-input { font-size: 11px; padding: 7px 10px; }
+}
+@media (max-width: 380px) {
+  /* Squeeze for very narrow phones (iPhone SE, older Android) */
+  .header { padding: 0 10px; }
+  .logo { font-size: 13px; }
+  .mode-badge { padding: 3px 6px; font-size: 9.5px; }
+  .tile-value { font-size: 22px; }
+  .reasoning-body { height: 180px; }
+  .event-list { height: 170px; }
+  .share-headline { font-size: 22px; }
+  /* Stack share-breakdown when 3 cols would crush below ~95px each */
+  .share-breakdown { grid-template-columns: 1fr 1fr; }
 }
