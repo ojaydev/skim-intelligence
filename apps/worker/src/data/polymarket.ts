@@ -78,12 +78,18 @@ export type MarketEvent =
 
 /**
  * Fetch the top N active, liquid markets from Gamma, ranked by 24h volume.
+ * Markets below `minVolumeUsd` are filtered out before the limit is applied;
+ * we overfetch from Gamma to compensate.
  */
-export async function fetchActiveMarkets(limit = 10): Promise<ParsedMarket[]> {
+export async function fetchActiveMarkets(
+  limit = 10,
+  minVolumeUsd = 0,
+): Promise<ParsedMarket[]> {
+  const overfetch = minVolumeUsd > 0 ? Math.max(limit * 4, 60) : limit;
   const url = new URL("https://gamma-api.polymarket.com/markets");
   url.searchParams.set("active", "true");
   url.searchParams.set("closed", "false");
-  url.searchParams.set("limit", String(limit));
+  url.searchParams.set("limit", String(overfetch));
   url.searchParams.set("order", "volume24hr");
   url.searchParams.set("ascending", "false");
 
@@ -94,6 +100,8 @@ export async function fetchActiveMarkets(limit = 10): Promise<ParsedMarket[]> {
   const parsed: ParsedMarket[] = [];
   for (const m of raw) {
     if (!m.clobTokenIds) continue;
+    const vol = Number(m.volume24hr ?? 0);
+    if (vol < minVolumeUsd) continue;
     let tokens: unknown;
     try {
       tokens = JSON.parse(m.clobTokenIds);
@@ -111,10 +119,11 @@ export async function fetchActiveMarkets(limit = 10): Promise<ParsedMarket[]> {
       category: m.category ?? "other",
       yesTokenId: yes,
       noTokenId: no,
-      volume_24h_usd: Number(m.volume24hr ?? 0),
+      volume_24h_usd: vol,
       end_date: m.endDate ?? "",
       tick_size: Number(m.orderPriceMinTickSize ?? 0.01),
     });
+    if (parsed.length >= limit) break;
   }
   return parsed;
 }

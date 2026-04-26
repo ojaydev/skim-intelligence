@@ -17,7 +17,16 @@ import type { Env } from "../env";
  *   - Arb (aggressive, taker):        p_fill = 0.95 at top-of-book, 0.60 at level 2
  *   - Maker fee = 0, taker fee = taker_fee_rate × notional
  *   - Taker slippage = ±0.2%
+ *
+ * Negative-EV guards (defence-in-depth — independent of Alpha/Risk):
+ *   - Mint/burn skipped unless gross edge clears 2× taker fee + 2× slippage
+ *     plus a 50bp safety margin.
+ *   - Market making skipped unless quoted spread is ≥ 50bp of mid (one-sided
+ *     fills bleed inventory below this threshold).
  */
+const MIN_ARB_NET_EDGE = 0.005; // 50bp safety margin above fees+slippage
+const MIN_MM_SPREAD_FRAC = 0.005; // 50bp minimum quoted spread
+const TAKER_SLIPPAGE_RATE = 0.002;
 
 export interface ExecutionRunResult {
   orders_created: number;
@@ -92,6 +101,21 @@ export async function runExecution(
           ? 1 - snapshot.best_bid // approximate NO ask from complement
           : 1 - snapshot.best_ask; // approximate NO bid
 
+      // Guard: skip when expected net edge after fees+slippage is too small
+      // to be worth the execution risk. Keeps Alpha/Risk false-positives from
+      // bleeding the paper P&L on marginal opportunities.
+      const grossEdge =
+        mb.type === "burn"
+          ? 1 - (yesPrice + noPrice)
+          : (yesPrice + noPrice) - 1;
+      const minEdge =
+        2 * snapshot.taker_fee_rate + 2 * TAKER_SLIPPAGE_RATE + MIN_ARB_NET_EDGE;
+      if (grossEdge < minEdge) {
+        console.log(
+          `execution: skip mint_burn ${signal.market_id} — gross_edge=${grossEdge.toFixed(4)} < min=${minEdge.toFixed(4)}`,
+        );
+        // Fall through to MM strategy below; do not place arb orders.
+      } else {
       const yesOrder = createOrder(
         signal.market_id,
         "mint_burn",
@@ -135,14 +159,22 @@ export async function runExecution(
       );
       const noFilled = fills.find((f) => f.order_id === noOrder.id);
       if (yesFilled && noFilled) {
-        const profit =
+        // Per-pair edge in $; multiply by number of pairs purchased (notional ÷ avg leg price)
+        const avgLegPrice =
+          (yesFilled.fill_price + noFilled.fill_price) / 2;
+        const pairs = avgLegPrice > 0 ? (mbNotional / 2) / avgLegPrice : 0;
+        const grossPnl =
           mb.type === "burn"
-            ? 1 - (yesFilled.fill_price + noFilled.fill_price) -
-              (yesFilled.fee_usd + noFilled.fee_usd)
-            : yesFilled.fill_price + noFilled.fill_price - 1 -
-              (yesFilled.fee_usd + noFilled.fee_usd);
-        netPnlDelta += profit * (mbNotional / 2);
+            ? pairs * (1 - (yesFilled.fill_price + noFilled.fill_price))
+            : pairs * ((yesFilled.fill_price + noFilled.fill_price) - 1);
+        const totalCost =
+          yesFilled.fee_usd +
+          noFilled.fee_usd +
+          yesFilled.slippage_usd +
+          noFilled.slippage_usd;
+        netPnlDelta += grossPnl - totalCost;
       }
+      } // end else (grossEdge >= minEdge)
     }
   }
 
@@ -153,7 +185,18 @@ export async function runExecution(
     const askPrice = decision.modifications?.ask_price ?? mm.ask_price;
     const mmNotional = modNotional ?? mm.max_notional_per_side_usd;
 
-    if (mmNotional > 0 && bidPrice !== null && askPrice !== null) {
+    // Guard: skip when quoted spread is too narrow — one-sided fills bleed
+    // inventory faster than spread capture can recoup at sub-50bp spreads.
+    const mid = (bidPrice + askPrice) / 2;
+    const spreadFrac = mid > 0 ? (askPrice - bidPrice) / mid : 0;
+    const mmAllowed = spreadFrac >= MIN_MM_SPREAD_FRAC;
+    if (!mmAllowed) {
+      console.log(
+        `execution: skip market_making ${signal.market_id} — spread_frac=${spreadFrac.toFixed(4)} < min=${MIN_MM_SPREAD_FRAC}`,
+      );
+    }
+
+    if (mmAllowed && mmNotional > 0 && bidPrice !== null && askPrice !== null) {
       const bidOrder = createOrder(
         signal.market_id,
         "market_making",

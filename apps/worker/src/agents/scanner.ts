@@ -19,7 +19,8 @@ import {
 import { computeSnapshot } from "../data/snapshot";
 
 const PING_INTERVAL_MS = 10_000;
-const POLYMARKET_MAX = 5;
+const POLYMARKET_MAX = 15;
+const POLYMARKET_MIN_VOLUME_USD = 50_000;
 const BAYSE_MAX = 10; // docs cap per subscribe — also enforced by relay
 
 interface PolyState {
@@ -161,8 +162,8 @@ export class ScannerDO implements DurableObject {
   // ─── Polymarket bootstrap + WS ──────────────────────────────────────
 
   private async bootstrapPolymarket(): Promise<void> {
-    const markets = await fetchActiveMarkets(POLYMARKET_MAX);
-    console.log(`scanner: polymarket ${markets.length} markets`);
+    const markets = await fetchActiveMarkets(POLYMARKET_MAX, POLYMARKET_MIN_VOLUME_USD);
+    console.log(`scanner: polymarket ${markets.length} markets (min volume $${POLYMARKET_MIN_VOLUME_USD})`);
     for (const m of markets) {
       try {
         const [yesBook, noBook] = await Promise.all([

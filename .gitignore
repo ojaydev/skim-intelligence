@@ -17,3 +17,7 @@ dist/
 
 # Claude Code (local-only)
 .claude/settings.local.json
+
+# Build/transfer bundles
+*.tar.gz
+*.zip
