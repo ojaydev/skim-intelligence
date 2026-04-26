@@ -1,0 +1,60 @@
+name = "skim-intelligence"
+main = "src/index.ts"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Serve the built React dashboard from /. The API at /api/* takes precedence.
+[assets]
+directory = "../web/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+# Observability
+[observability]
+enabled = true
+
+# ─── Durable Objects ───
+# Scanner = holds outgoing WS connections to Bayse/Polymarket (stays resident)
+# Orchestrator = broadcasts events to dashboard WS clients (uses hibernation)
+[[durable_objects.bindings]]
+name = "SCANNER"
+class_name = "ScannerDO"
+
+[[durable_objects.bindings]]
+name = "ORCHESTRATOR"
+class_name = "OrchestratorDO"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["ScannerDO", "OrchestratorDO"]
+
+# ─── D1 database (paper trading ledger) ───
+[[d1_databases]]
+binding = "DB"
+database_name = "skim-db"
+database_id = "2925e2a0-fac2-4b79-a445-1cc3a86076cf"
+migrations_dir = "migrations"
+
+# ─── KV (snapshots, rate limits, portfolio cache) ───
+[[kv_namespaces]]
+binding = "CACHE"
+id = "1cfb1fafa7ab42feb0132ac0a31573e9"
+
+# ─── Cron Triggers ───
+# Epoch close every 5 minutes, inventory rebalance every minute
+[triggers]
+crons = ["*/5 * * * *"]
+
+# ─── Secrets (set via `wrangler secret put <name>`) ───
+# ANTHROPIC_API_KEY
+# BAYSE_PUBLIC_API_KEY
+# BAYSE_API_SECRET
+
+# ─── Vars (non-secret config) ───
+[vars]
+EXECUTION_MODE = "paper"
+POLYMARKET_WS_URL = "wss://ws-subscriptions-clob.polymarket.com/ws/market"
+BAYSE_WS_URL = "wss://relay.bayse.markets/ws/market-data"
+MAX_TOTAL_EXPOSURE_USD = "1000"
+MAX_NOTIONAL_PER_MARKET_USD = "200"
+DAILY_LOSS_LIMIT_USD = "50"

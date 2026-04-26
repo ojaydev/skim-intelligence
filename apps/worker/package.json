@@ -1,0 +1,28 @@
+{
+  "name": "@skim/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "wrangler deploy --dry-run --outdir=dist",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "db:migrate:local": "wrangler d1 migrations apply skim-db --local",
+    "db:migrate": "wrangler d1 migrations apply skim-db --remote",
+    "types": "wrangler types"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.90.0",
+    "@clerk/backend": "^3.2.13",
+    "@resvg/resvg-wasm": "^2.6.2",
+    "@skim/shared": "workspace:*",
+    "hono": "^4.6.12"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241218.0",
+    "typescript": "^5.6.3",
+    "wrangler": "^3.95.0"
+  }
+}

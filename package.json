@@ -1,0 +1,25 @@
+{
+  "name": "skim-intelligence",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Autonomous prediction market intelligence — five-agent system powered by Opus 4.7",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@10.32.1",
+  "scripts": {
+    "dev": "pnpm --parallel --filter './apps/*' dev",
+    "dev:worker": "pnpm --filter @skim/worker dev",
+    "dev:web": "pnpm --filter @skim/web dev",
+    "build": "pnpm --filter './apps/*' build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "deploy:worker": "pnpm --filter @skim/worker deploy",
+    "db:migrate": "pnpm --filter @skim/worker db:migrate",
+    "db:migrate:local": "pnpm --filter @skim/worker db:migrate:local"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skim Intelligence — Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #080808;
+    --bg2:       #0e0e0e;
+    --bg3:       #141414;
+    --border:    rgba(247,244,239,0.08);
+    --text:      #f7f4ef;
+    --text-dim:  rgba(247,244,239,0.45);
+    --text-faint:rgba(247,244,239,0.2);
+    --cyan:      #35e7ff;
+    --cyan-dim:  rgba(53,231,255,0.12);
+    --cyan-mid:  rgba(53,231,255,0.30);
+    --green:     #3dffa0;
+    --red:       #ff4e4e;
+    --amber:     #ffb347;
+  }
+
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; line-height: 1.5; overflow-x: hidden; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border); }
+
+  /* ── LAYOUT ── */
+  .shell { display: grid; grid-template-rows: 48px 1fr; min-height: 100vh; }
+
+  /* ── HEADER ── */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; border-bottom: 1px solid var(--border);
+    background: var(--bg); position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--text); cursor: pointer; }
+  .logo span { color: var(--cyan); }
+  .header-right { display: flex; align-items: center; gap: 20px; }
+
+  /* ── NAV TABS ── */
+  .nav-tabs { display: flex; gap: 0; margin-left: 28px; }
+  .nav-tab { padding: 0 16px; height: 48px; display: flex; align-items: center; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); cursor: pointer; border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; }
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+  .mode-badge {
+    display: flex; align-items: center; gap: 7px;
+    padding: 4px 10px; border: 1px solid var(--cyan-mid);
+    background: var(--cyan-dim); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--cyan);
+  }
+  .mode-badge .dot { width: 6px; height: 6px; background: var(--cyan); border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+  .status-row { display: flex; align-items: center; gap: 12px; font-size: 11px; color: var(--text-dim); }
+  .status-item { display: flex; align-items: center; gap: 5px; }
+  .status-dot { width: 5px; height: 5px; border-radius: 50%; }
+  .status-dot.ok { background: var(--green); }
+  .status-dot.warn { background: var(--amber); }
+  .ws-indicator { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--cyan); }
+  .ws-ring { width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--cyan); animation: ws-blink 1.4s infinite; }
+  @keyframes ws-blink { 0%,100%{opacity:1;} 50%{opacity:.2;} }
+
+  /* ── MAIN GRID ── */
+  main { padding: 20px 24px; display: grid; gap: 16px; grid-template-columns: 1fr 1fr 1fr 1fr; grid-template-rows: auto auto auto; }
+
+  /* ── TILES ── */
+  .tile {
+    background: var(--bg2); border: 1px solid var(--border);
+    padding: 18px 20px;
+  }
+  .tile-label { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
+  .tile-value { font-family: 'Cormorant Garamond', serif; font-size: 36px; font-weight: 300; line-height: 1; }
+  .tile-value.positive { color: var(--green); }
+  .tile-value.negative { color: var(--red); }
+  .tile-value.cyan { color: var(--cyan); }
+  .tile-sub { font-size: 10px; color: var(--text-faint); margin-top: 5px; letter-spacing: .06em; text-transform: uppercase; }
+
+  /* ── PANELS (full-width / half-width cards) ── */
+  .panel { background: var(--bg2); border: 1px solid var(--border); padding: 0; }
+  .panel-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .panel-title { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--text-dim); }
+  .panel-meta { font-size: 10px; color: var(--text-faint); }
+  .panel-body { padding: 12px 16px; }
+
+  /* ── OPPORTUNITY QUEUE ── */
+  .opp-item { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .12s; }
+  .opp-item:last-child { border-bottom: none; }
+  .opp-item:hover { background: var(--bg3); margin: 0 -16px; padding-left: 16px; padding-right: 16px; }
+  .opp-rank { font-size: 10px; color: var(--text-faint); width: 16px; text-align: right; flex-shrink: 0; }
+  .opp-name { flex: 1; font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .opp-strategy { font-size: 10px; color: var(--text-dim); margin-top: 1px; }
+  .opp-bar-wrap { width: 80px; height: 4px; background: var(--bg3); flex-shrink: 0; }
+  .opp-bar { height: 100%; background: var(--cyan); transition: width .6s ease; }
+  .opp-bar.med { background: var(--amber); }
+  .opp-bar.low { background: var(--text-faint); }
+  .opp-score { font-family: 'DM Mono', monospace; font-size: 12px; width: 34px; text-align: right; flex-shrink: 0; }
+  .opp-score.high { color: var(--cyan); }
+  .opp-score.med { color: var(--amber); }
+  .opp-score.low { color: var(--text-faint); }
+  .view-all { display: block; text-align: center; padding: 8px; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--cyan); cursor: pointer; margin-top: 4px; border-top: 1px solid var(--border); }
+  .view-all:hover { background: var(--cyan-dim); }
+
+  /* ── REASONING FEED ── */
+  .reasoning-wrap { grid-column: span 2; }
+  .reasoning-body { background: #050505; padding: 14px 16px; height: 240px; overflow-y: auto; font-family: 'DM Mono', monospace; font-size: 11.5px; line-height: 1.7; color: rgba(53,231,255,0.82); }
+  .reasoning-body .label { color: var(--text-faint); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 8px; display: block; }
+  .reasoning-body .market-tag { color: var(--cyan); font-weight: 400; }
+  .cursor { display: inline-block; width: 8px; height: 13px; background: var(--cyan); animation: blink .9s step-end infinite; vertical-align: text-bottom; margin-left: 1px; }
+  @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+  .reasoning-summary { margin-top: 12px; padding: 10px 12px; background: var(--cyan-dim); border-left: 2px solid var(--cyan); font-size: 11.5px; color: var(--text); line-height: 1.6; }
+
+  /* ── P&L ATTRIBUTION ── */
+  .attr-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); }
+  .attr-row:last-child { border-bottom: none; }
+  .attr-label { font-size: 12px; color: var(--text-dim); }
+  .attr-bar-wrap { flex: 1; height: 2px; background: var(--bg3); margin: 0 16px; }
+  .attr-bar { height: 100%; transition: width 1s ease; }
+  .attr-bar.green { background: var(--green); }
+  .attr-bar.cyan { background: var(--cyan); }
+  .attr-bar.amber { background: var(--amber); }
+  .attr-bar.red { background: var(--red); }
+  .attr-value { font-family: 'DM Mono', monospace; font-size: 12px; text-align: right; min-width: 60px; }
+  .attr-value.green { color: var(--green); }
+  .attr-value.red { color: var(--red); }
+  .attr-total { display: flex; justify-content: space-between; padding-top: 10px; margin-top: 4px; border-top: 1px solid var(--border); }
+  .attr-total-label { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-dim); }
+  .attr-total-value { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; color: var(--green); }
+
+  /* ── EVENT FEED ── */
+  .event-list { height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 0; }
+  .event-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); animation: fadeIn .3s ease; }
+  .event-item:last-child { border-bottom: none; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+  .event-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .event-dot.fill { background: var(--green); }
+  .event-dot.signal { background: var(--cyan); }
+  .event-dot.risk { background: var(--amber); }
+  .event-dot.reject { background: var(--red); }
+  .event-dot.epoch { background: var(--text-dim); }
+  .event-text { flex: 1; }
+  .event-type { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-faint); }
+  .event-body { font-size: 11.5px; color: var(--text); line-height: 1.4; margin-top: 1px; }
+  .event-time { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-faint); flex-shrink: 0; margin-top: 4px; }
+
+  /* ── AGENT STATUS ── */
+  .agent-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .agent-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: var(--bg3); border: 1px solid var(--border); }
+  .agent-indicator { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+  .agent-indicator.running { background: var(--cyan); animation: pulse 2s infinite; }
+  .agent-indicator.idle { background: var(--text-faint); }
+  .agent-indicator.busy { background: var(--amber); animation: pulse 1.2s infinite; }
+  .agent-name { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; }
+  .agent-model { font-size: 9px; color: var(--cyan); letter-spacing: .06em; margin-top: 1px; }
+  .agent-last { font-size: 10px; color: var(--text-faint); margin-top: 3px; }
+
+  /* ── SHARE CARD ── */
+  .share-card { background: var(--bg); border: 1px solid var(--cyan-mid); padding: 20px 22px; position: relative; overflow: hidden; }
+  .share-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--cyan), transparent); }
+  .share-logo { font-family: 'Cormorant Garamond', serif; font-size: 13px; letter-spacing: .2em; text-transform: uppercase; color: var(--cyan); margin-bottom: 16px; }
+  .share-headline { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 300; color: var(--green); line-height: 1.1; margin-bottom: 4px; }
+  .share-subline { font-size: 11px; color: var(--text-dim); margin-bottom: 18px; }
+  .share-breakdown { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+  .share-bucket { border-left: 2px solid var(--border); padding-left: 10px; }
+  .share-bucket-label { font-size: 9px; text-transform: uppercase; letter-spacing: .12em; color: var(--text-faint); margin-bottom: 3px; }
+  .share-bucket-value { font-family: 'DM Mono', monospace; font-size: 14px; color: var(--cyan); }
+  .share-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 12px; }
+  .share-period { font-size: 10px; color: var(--text-faint); }
+  .share-btn { padding: 5px 14px; border: 1px solid var(--cyan); background: transparent; color: var(--cyan); font-family: 'DM Sans', sans-serif; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; }
+  .share-btn:hover { background: var(--cyan-dim); }
+
+  /* ── MARKET DETAIL MODAL ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 200; display: none; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--bg2); border: 1px solid var(--border); width: 720px; max-height: 80vh; overflow-y: auto; }
+  .modal-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .modal-title { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 400; }
+  .modal-close { background: none; border: none; color: var(--text-dim); font-size: 20px; cursor: pointer; line-height: 1; }
+  .modal-body { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .modal-section-title { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; }
+  .ob-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border); font-family: 'DM Mono', monospace; font-size: 11px; }
+  .ob-row.best { color: var(--cyan); }
+  .ob-bid { color: var(--green); }
+  .ob-ask { color: var(--red); }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-item { padding: 8px 10px; background: var(--bg3); border: 1px solid var(--border); }
+  .stat-label { font-size: 9px; color: var(--text-faint); text-transform: uppercase; letter-spacing: .1em; }
+  .stat-value { font-family: 'DM Mono', monospace; font-size: 13px; margin-top: 2px; }
+  .signal-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 8px; }
+  .signal-badge.enter { background: rgba(61,255,160,.1); border: 1px solid rgba(61,255,160,.3); color: var(--green); }
+  .signal-badge.observe { background: rgba(53,231,255,.1); border: 1px solid rgba(53,231,255,.3); color: var(--cyan); }
+  .risk-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+  .risk-badge.approved { background: rgba(61,255,160,.1); border: 1px solid rgba(61,255,160,.3); color: var(--green); }
+  .risk-badge.rejected { background: rgba(255,78,78,.1); border: 1px solid rgba(255,78,78,.3); color: var(--red); }
+
+  /* ── GRID SPANS ── */
+  .span2 { grid-column: span 2; }
+  .span3 { grid-column: span 3; }
+  .span4 { grid-column: span 4; }
+
+  /* ── SECTION DIVIDER ── */
+  .section-label { grid-column: span 4; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--text-faint); padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+
+  /* ── WS STATUS BAR ── */
+  .ws-bar { grid-column: span 4; display: flex; align-items: center; gap: 20px; padding: 8px 14px; background: var(--bg3); border: 1px solid var(--border); font-size: 10px; }
+  .ws-conn { display: flex; align-items: center; gap: 7px; }
+  .ws-conn-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .ws-conn-dot.live { background: var(--green); animation: pulse 2s infinite; }
+  .ws-conn-dot.connecting { background: var(--amber); animation: pulse 1s infinite; }
+  .ws-conn-label { color: var(--text-dim); }
+  .ws-conn-value { color: var(--text); }
+  .ws-sep { width: 1px; height: 14px; background: var(--border); }
+  .ws-msg-count { color: var(--text-dim); }
+  .ws-msg-count span { color: var(--cyan); font-family: 'DM Mono', monospace; }
+
+  /* ── ABOUT PAGE ── */
+  #aboutView { display: none; max-width: 900px; margin: 0 auto; padding: 60px 24px 80px; }
+  #aboutView.visible { display: block; }
+  #dashView.hidden { display: none; }
+
+  .about-hero { border-bottom: 1px solid var(--border); padding-bottom: 48px; margin-bottom: 48px; }
+  .about-eyebrow { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--cyan); margin-bottom: 16px; }
+  .about-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(36px, 6vw, 64px); font-weight: 300; line-height: 1.08; color: var(--text); margin-bottom: 20px; }
+  .about-title em { font-style: italic; color: var(--cyan); }
+  .about-lead { font-size: 15px; line-height: 1.75; color: var(--text-dim); max-width: 680px; }
+  .about-lead strong { color: var(--text); font-weight: 500; }
+
+  .about-insight { margin: 40px 0; padding: 24px 28px; border-left: 2px solid var(--cyan); background: var(--cyan-dim); }
+  .about-insight-label { font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: var(--cyan); margin-bottom: 10px; }
+  .about-insight-text { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 300; line-height: 1.6; color: var(--text); }
+
+  .about-section { margin-bottom: 52px; }
+  .about-section-title { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+
+  /* Agents */
+  .agent-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .agent-card { background: var(--bg2); border: 1px solid var(--border); padding: 18px 20px; }
+  .agent-card.llm { border-color: rgba(53,231,255,0.2); }
+  .ac-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .ac-name { font-size: 13px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; }
+  .ac-model { font-size: 9px; letter-spacing: .08em; text-transform: uppercase; padding: 2px 7px; border: 1px solid var(--border); color: var(--text-faint); }
+  .ac-model.opus { border-color: rgba(53,231,255,0.3); color: var(--cyan); }
+  .ac-trigger { font-size: 10px; color: var(--text-faint); margin-bottom: 6px; }
+  .ac-desc { font-size: 12px; color: var(--text-dim); line-height: 1.6; }
+  .ac-desc strong { color: var(--text); }
+  .agent-card.full { grid-column: span 2; }
+
+  /* Strategy layers */
+  .strategy-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .strategy-card { background: var(--bg2); border: 1px solid var(--border); padding: 18px 20px; }
+  .sc-num { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 300; color: var(--border); line-height: 1; margin-bottom: 8px; }
+  .sc-name { font-size: 11px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--text); margin-bottom: 8px; }
+  .sc-desc { font-size: 12px; color: var(--text-dim); line-height: 1.6; }
+  .sc-edge { margin-top: 10px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--cyan); }
+
+  /* Tech stack table */
+  .stack-table { width: 100%; border-collapse: collapse; }
+  .stack-table th { text-align: left; font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--text-faint); padding: 0 12px 10px 0; font-weight: 400; }
+  .stack-table td { padding: 9px 12px 9px 0; border-top: 1px solid var(--border); font-size: 12px; vertical-align: top; }
+  .stack-table td:first-child { color: var(--text-dim); width: 140px; }
+  .stack-table td:nth-child(2) { color: var(--text); font-weight: 500; }
+  .stack-table td:nth-child(3) { color: var(--text-faint); font-size: 11px; }
+
+  /* Architecture flow */
+  .arch-flow { background: var(--bg2); border: 1px solid var(--border); padding: 24px; font-family: 'DM Mono', monospace; font-size: 11.5px; line-height: 2; color: rgba(247,244,239,0.5); overflow-x: auto; white-space: pre; }
+  .arch-flow .hl { color: var(--cyan); }
+  .arch-flow .dim { color: rgba(247,244,239,0.2); }
+
+  /* WS endpoints */
+  .ws-table { width: 100%; border-collapse: collapse; }
+  .ws-table td { padding: 8px 12px 8px 0; border-top: 1px solid var(--border); font-size: 12px; vertical-align: middle; }
+  .ws-table td:first-child { color: var(--text-dim); width: 110px; }
+  .ws-table td:nth-child(2) { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--cyan); }
+  .ws-table td:nth-child(3) { color: var(--text-faint); font-size: 11px; padding-left: 16px; }
+
+  /* Submission */
+  .submission-box { background: var(--bg2); border: 1px solid var(--border); padding: 24px 28px; position: relative; overflow: hidden; }
+  .submission-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--cyan), transparent); }
+  .submission-box p { font-size: 13px; line-height: 1.8; color: var(--text-dim); }
+  .submission-box p strong { color: var(--text); }
+  .submission-box p + p { margin-top: 12px; }
+
+  /* Roadmap */
+  .roadmap-row { display: flex; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+  .roadmap-row:last-child { border-bottom: none; }
+  .roadmap-from { font-size: 11px; color: var(--text-faint); width: 160px; flex-shrink: 0; padding-top: 2px; }
+  .roadmap-arrow { color: var(--cyan); flex-shrink: 0; padding-top: 2px; }
+  .roadmap-to { font-size: 12px; color: var(--text); line-height: 1.5; }
+
+  /* Hackathon badges */
+  .prize-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .prize-badge { padding: 5px 12px; border: 1px solid var(--border); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-dim); }
+  .prize-badge.primary { border-color: rgba(53,231,255,0.3); color: var(--cyan); background: var(--cyan-dim); }
+
+  /* About footer */
+  .about-footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .about-footer-left { font-family: 'Cormorant Garamond', serif; font-size: 14px; color: var(--text-faint); }
+  .about-footer-right { font-size: 10px; color: var(--text-faint); text-align: right; line-height: 1.7; }
+  .about-footer-right span { color: var(--cyan); }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- HEADER -->
+<header>
+  <div style="display:flex;align-items:center">
+    <div class="logo" onclick="switchTab('dashboard')">Skim<span>.</span>Intelligence</div>
+    <nav class="nav-tabs">
+      <div class="nav-tab active" id="tab-dashboard" onclick="switchTab('dashboard')">Dashboard</div>
+      <div class="nav-tab" id="tab-about" onclick="switchTab('about')">About</div>
+    </nav>
+  </div>
+  <div class="header-right">
+    <div class="status-row">
+      <div class="status-item"><div class="status-dot ok"></div> D1 Ledger</div>
+      <div class="status-item"><div class="status-dot ok"></div> KV Cache</div>
+      <div class="status-item"><div class="status-dot ok"></div> Orchestrator</div>
+    </div>
+    <div class="ws-indicator"><div class="ws-ring"></div> WS Live</div>
+    <div class="mode-badge"><div class="dot"></div> Paper Mode</div>
+  </div>
+</header>
+
+<div id="dashView">
+<!-- MAIN -->
+<main>
+
+  <!-- WS STATUS -->
+  <div class="ws-bar">
+    <div class="ws-conn">
+      <div class="ws-conn-dot live"></div>
+      <span class="ws-conn-label">Polymarket</span>
+      <span class="ws-conn-value">wss://ws-subscriptions-clob.polymarket.com/ws/market</span>
+    </div>
+    <div class="ws-sep"></div>
+    <div class="ws-conn">
+      <div class="ws-conn-dot live"></div>
+      <span class="ws-conn-label">Bayse</span>
+      <span class="ws-conn-value">wss://relay.bayse.markets/ws/market-data</span>
+    </div>
+    <div class="ws-sep"></div>
+    <div class="ws-conn">
+      <div class="ws-conn-dot live"></div>
+      <span class="ws-conn-label">Dashboard</span>
+      <span class="ws-conn-value">wss://skim.workers.dev/api/ws</span>
+    </div>
+    <div class="ws-sep"></div>
+    <div class="ws-msg-count">Messages received: <span id="msgCount">1,842</span></div>
+    <div style="flex:1"></div>
+    <div style="font-size:10px;color:var(--text-faint)">Last event: <span id="lastEvent" style="color:var(--text)">0.3s ago</span></div>
+  </div>
+
+  <!-- METRIC TILES -->
+  <div class="tile">
+    <div class="tile-label">Markets Active</div>
+    <div class="tile-value cyan" id="marketsCount">23</div>
+    <div class="tile-sub">of 31 scanned</div>
+  </div>
+  <div class="tile">
+    <div class="tile-label">Net Paper P&L</div>
+    <div class="tile-value positive" id="netPnl">+$184.20</div>
+    <div class="tile-sub">Paper · this session</div>
+  </div>
+  <div class="tile">
+    <div class="tile-label">Total Fills</div>
+    <div class="tile-value" id="fillCount">147</div>
+    <div class="tile-sub">Today</div>
+  </div>
+  <div class="tile">
+    <div class="tile-label">Quote Uptime</div>
+    <div class="tile-value positive">98.2%</div>
+    <div class="tile-sub">Two-sided quotes</div>
+  </div>
+
+  <!-- OPPORTUNITY QUEUE -->
+  <div class="panel span2">
+    <div class="panel-header">
+      <div class="panel-title">Opportunity Queue</div>
+      <div class="panel-meta" id="queueTime">Updated just now</div>
+    </div>
+    <div class="panel-body">
+      <div id="oppQueue">
+        <div class="opp-item" onclick="openModal('TRUMP-2026','Will Trump serve a full second term?','0.47','0.84','MM + Reward')">
+          <div class="opp-rank">1</div>
+          <div>
+            <div class="opp-name">TRUMP-2026</div>
+            <div class="opp-strategy">MM + Reward farming</div>
+          </div>
+          <div class="opp-bar-wrap"><div class="opp-bar" style="width:84%"></div></div>
+          <div class="opp-score high">0.84</div>
+        </div>
+        <div class="opp-item" onclick="openModal('FED-MAY','Fed rate cut in May 2026?','0.62','0.71','Mint/Burn Arb')">
+          <div class="opp-rank">2</div>
+          <div>
+            <div class="opp-name">FED-MAY</div>
+            <div class="opp-strategy">Mint/burn arb</div>
+          </div>
+          <div class="opp-bar-wrap"><div class="opp-bar" style="width:71%"></div></div>
+          <div class="opp-score high">0.71</div>
+        </div>
+        <div class="opp-item" onclick="openModal('BTC-100K','Bitcoin above $100K by June?','0.71','0.63','MM')">
+          <div class="opp-rank">3</div>
+          <div>
+            <div class="opp-name">BTC-100K</div>
+            <div class="opp-strategy">Market making</div>
+          </div>
+          <div class="opp-bar-wrap"><div class="opp-bar med" style="width:63%"></div></div>
+          <div class="opp-score med">0.63</div>
+        </div>
+        <div class="opp-item">
+          <div class="opp-rank">4</div>
+          <div>
+            <div class="opp-name">NIGERIA-PRES-2027</div>
+            <div class="opp-strategy">Reward farming only</div>
+          </div>
+          <div class="opp-bar-wrap"><div class="opp-bar med" style="width:51%"></div></div>
+          <div class="opp-score med">0.51</div>
+        </div>
+        <div class="opp-item">
+          <div class="opp-rank">5</div>
+          <div>
+            <div class="opp-name">EURO-2026</div>
+            <div class="opp-strategy">Observe — near resolution</div>
+          </div>
+          <div class="opp-bar-wrap"><div class="opp-bar low" style="width:9%"></div></div>
+          <div class="opp-score low">0.09</div>
+        </div>
+      </div>
+      <div class="view-all">View all 23 markets →</div>
+    </div>
+  </div>
+
+  <!-- REASONING FEED -->
+  <div class="panel span2 reasoning-wrap">
+    <div class="panel-header">
+      <div class="panel-title">Agent Reasoning — Alpha · Opus 4.7</div>
+      <div class="panel-meta"><span id="reasoningMarket">TRUMP-2026</span></div>
+    </div>
+    <div class="reasoning-body" id="reasoningBody">
+      <span class="label">// live thinking stream · claude-opus-4-7</span>
+      <span id="reasoningText"></span><span class="cursor" id="cursor"></span>
+    </div>
+    <div style="padding:12px 16px;border-top:1px solid var(--border)">
+      <div class="reasoning-summary" id="reasoningSummary">
+        5.8% spread at P=0.47 with $1,240 reward pool remaining. Entering market-making sleeve with ±3¢ quotes, $120 notional cap.
+      </div>
+    </div>
+  </div>
+
+  <!-- P&L ATTRIBUTION -->
+  <div class="panel span2">
+    <div class="panel-header">
+      <div class="panel-title">P&L Attribution — Current Epoch</div>
+      <div class="panel-meta" id="epochTimer">Next close in 3:41</div>
+    </div>
+    <div class="panel-body">
+      <div class="attr-row">
+        <div class="attr-label">Spread capture</div>
+        <div class="attr-bar-wrap"><div class="attr-bar green" style="width:67%"></div></div>
+        <div class="attr-value green">+$124.00</div>
+      </div>
+      <div class="attr-row">
+        <div class="attr-label">Liquidity rewards</div>
+        <div class="attr-bar-wrap"><div class="attr-bar cyan" style="width:25%"></div></div>
+        <div class="attr-value green">+$47.20</div>
+      </div>
+      <div class="attr-row">
+        <div class="attr-label">Arb profits</div>
+        <div class="attr-bar-wrap"><div class="attr-bar amber" style="width:17%"></div></div>
+        <div class="attr-value green">+$31.00</div>
+      </div>
+      <div class="attr-row">
+        <div class="attr-label">Fees paid</div>
+        <div class="attr-bar-wrap"><div class="attr-bar red" style="width:10%"></div></div>
+        <div class="attr-value red">−$18.00</div>
+      </div>
+      <div class="attr-total">
+        <div class="attr-total-label">Net P&L (paper)</div>
+        <div class="attr-total-value">+$184.20</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIVE EVENT FEED -->
+  <div class="panel span2">
+    <div class="panel-header">
+      <div class="panel-title">Live Event Feed</div>
+      <div class="panel-meta">WebSocket · /api/ws</div>
+    </div>
+    <div class="panel-body" style="padding:8px 16px">
+      <div class="event-list" id="eventFeed">
+        <div class="event-item">
+          <div class="event-dot fill"></div>
+          <div class="event-text">
+            <div class="event-type">Fill</div>
+            <div class="event-body">TRUMP-2026 YES · $48.20 @ 0.47 · spread +$2.80</div>
+          </div>
+          <div class="event-time">0:12</div>
+        </div>
+        <div class="event-item">
+          <div class="event-dot signal"></div>
+          <div class="event-text">
+            <div class="event-type">Signal</div>
+            <div class="event-body">FED-MAY arb window 4.2% · score 0.71</div>
+          </div>
+          <div class="event-time">0:28</div>
+        </div>
+        <div class="event-item">
+          <div class="event-dot risk"></div>
+          <div class="event-text">
+            <div class="event-type">Risk · Approved</div>
+            <div class="event-body">FED-MAY burn arb · notional $80 · within limits</div>
+          </div>
+          <div class="event-time">0:29</div>
+        </div>
+        <div class="event-item">
+          <div class="event-dot reject"></div>
+          <div class="event-text">
+            <div class="event-type">Risk · Rejected</div>
+            <div class="event-body">EURO-2026 · snapshot stale 92s → hard limit</div>
+          </div>
+          <div class="event-time">0:44</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AGENT STATUS -->
+  <div class="panel span2">
+    <div class="panel-header">
+      <div class="panel-title">Agent Status</div>
+      <div class="panel-meta">Cycle #1,284</div>
+    </div>
+    <div class="panel-body">
+      <div class="agent-grid">
+        <div class="agent-item">
+          <div class="agent-indicator running"></div>
+          <div>
+            <div class="agent-name">Scanner</div>
+            <div class="agent-model">WS · Bayse + Polymarket</div>
+            <div class="agent-last">book delta received 0.3s ago</div>
+          </div>
+        </div>
+        <div class="agent-item">
+          <div class="agent-indicator busy"></div>
+          <div>
+            <div class="agent-name">Alpha</div>
+            <div class="agent-model">claude-opus-4-7</div>
+            <div class="agent-last">analyzing TRUMP-2026…</div>
+          </div>
+        </div>
+        <div class="agent-item">
+          <div class="agent-indicator idle"></div>
+          <div>
+            <div class="agent-name">Risk</div>
+            <div class="agent-model">claude-opus-4-7</div>
+            <div class="agent-last">last: approved FED-MAY 29s ago</div>
+          </div>
+        </div>
+        <div class="agent-item">
+          <div class="agent-indicator idle"></div>
+          <div>
+            <div class="agent-name">Execution</div>
+            <div class="agent-model">Paper trading engine</div>
+            <div class="agent-last">inventory check in 31s</div>
+          </div>
+        </div>
+        <div class="agent-item" style="grid-column: span 2">
+          <div class="agent-indicator idle"></div>
+          <div>
+            <div class="agent-name">Reporter</div>
+            <div class="agent-model">claude-opus-4-7</div>
+            <div class="agent-last">last epoch: +$32.40 · next close in 3:41</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHARE CARD -->
+  <div class="panel span2">
+    <div class="panel-header">
+      <div class="panel-title">Epoch Share Card</div>
+      <div class="panel-meta">Epoch #257 · 5-min window</div>
+    </div>
+    <div class="panel-body" style="padding:0">
+      <div class="share-card">
+        <div class="share-logo">Skim Intelligence</div>
+        <div class="share-headline">+$184.20</div>
+        <div class="share-subline">Paper net · 23 markets · 147 fills · Epoch #257</div>
+        <div class="share-breakdown">
+          <div class="share-bucket">
+            <div class="share-bucket-label">Spread</div>
+            <div class="share-bucket-value">+$124</div>
+          </div>
+          <div class="share-bucket">
+            <div class="share-bucket-label">Rewards</div>
+            <div class="share-bucket-value">+$47</div>
+          </div>
+          <div class="share-bucket">
+            <div class="share-bucket-label">Arb</div>
+            <div class="share-bucket-value">+$31</div>
+          </div>
+        </div>
+        <div class="share-footer">
+          <div class="share-period">Apr 22, 2026 · 5-min epoch · Paper only</div>
+          <button class="share-btn" onclick="copyCard()">Copy card</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div><!-- /dashView -->
+
+<!-- ABOUT VIEW -->
+<div id="aboutView">
+
+  <!-- HERO -->
+  <div class="about-hero">
+    <div class="about-eyebrow">Anthropic Opus 4.7 Hackathon &nbsp;·&nbsp; April 2026</div>
+    <h1 class="about-title">Autonomous prediction market<br><em>intelligence</em></h1>
+    <p class="about-lead">
+      Skim Intelligence is a <strong>five-agent system powered by Claude Opus 4.7</strong> that autonomously scans live prediction market orderbooks, reasons about structural yield opportunities, paper-trades approved signals, and attributes performance at every epoch close.
+      <br><br>
+      It makes <strong>no directional bets</strong>. Every edge it extracts — maker rebates, liquidity rewards, mint/burn arbitrage — is available regardless of whether markets resolve YES or NO.
+    </p>
+
+    <div class="about-insight">
+      <div class="about-insight-label">Core Insight</div>
+      <div class="about-insight-text">"Prediction markets pay bots to exist. Maker rebates, liquidity rewards, and mint/burn arbitrage are structural edges baked into platform design. Most operators access them through hardcoded rules. Skim uses Opus 4.7 to reason about each situation dynamically — the way a sophisticated quantitative analyst would."</div>
+    </div>
+  </div>
+
+  <!-- STRATEGY LAYERS -->
+  <div class="about-section">
+    <div class="about-section-title">Three Strategy Layers</div>
+    <div class="strategy-grid">
+      <div class="strategy-card">
+        <div class="sc-num">01</div>
+        <div class="sc-name">Mint / Burn Arbitrage</div>
+        <div class="sc-desc">A YES share + NO share = $1.00 by protocol invariant. When the complement sum drifts above or below $1.00 by more than the taker fee, a risk-free arb exists. Alpha Agent checks both legs simultaneously and rejects if data is stale.</div>
+        <div class="sc-edge">net margin &gt; 3.2% required</div>
+      </div>
+      <div class="strategy-card">
+        <div class="sc-num">02</div>
+        <div class="sc-name">CLOB Market Making</div>
+        <div class="sc-desc">Post two-sided limit orders at ±3¢ from mid, capturing the bid-ask spread on fills. Zero maker fees. Inventory neutrality enforced — YES and NO positions stay within ±15% of each other by notional to avoid directional drift.</div>
+        <div class="sc-edge">spread &gt; 3% · depth &gt; $200</div>
+      </div>
+      <div class="strategy-card">
+        <div class="sc-num">03</div>
+        <div class="sc-name">Liquidity Reward Farming</div>
+        <div class="sc-desc">Bayse pays from a fixed pool per market for resting two-sided orders. Market-making orders automatically qualify when <code>two_sided_eligible = true</code>. Incremental yield on top of spread capture — no additional capital required.</div>
+        <div class="sc-edge">pool &gt; $50 · yield est. +1.2%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIVE AGENTS -->
+  <div class="about-section">
+    <div class="about-section-title">The Five Agents</div>
+    <div class="agent-cards">
+
+      <div class="agent-card">
+        <div class="ac-header">
+          <div class="ac-name">Scanner</div>
+          <div class="ac-model">Deterministic · No LLM</div>
+        </div>
+        <div class="ac-trigger">Trigger: WebSocket stream (Bayse + Polymarket)</div>
+        <div class="ac-desc">Holds persistent WS connections to <strong>wss://relay.bayse.markets/ws/market-data</strong> and <strong>wss://ws-subscriptions-clob.polymarket.com/ws/market</strong>. On each <code>book</code> delta, computes mid price, spread %, depth, reward eligibility, and complement sum. Writes <code>MarketSnapshot</code> to Cloudflare KV.</div>
+      </div>
+
+      <div class="agent-card llm">
+        <div class="ac-header">
+          <div class="ac-name">Alpha</div>
+          <div class="ac-model opus">claude-opus-4-7</div>
+        </div>
+        <div class="ac-trigger">Trigger: Per market snapshot</div>
+        <div class="ac-desc">The core intelligence. Receives the full market snapshot and reasons through <strong>all three strategy layers simultaneously</strong>. Outputs a structured signal with <code>opportunity_score</code> (0–1), per-strategy plans, and full thinking text streamed live to the dashboard. This reasoning IS the demo.</div>
+      </div>
+
+      <div class="agent-card llm">
+        <div class="ac-header">
+          <div class="ac-name">Risk</div>
+          <div class="ac-model opus">claude-opus-4-7</div>
+        </div>
+        <div class="ac-trigger">Trigger: Per Alpha signal</div>
+        <div class="ac-desc">The circuit breaker. Enforces hard limits — daily loss cap, per-market exposure, total portfolio exposure, data freshness (rejects if snapshot &gt; 60s old), inventory imbalance, execution mode. Returns <strong>approved / modified / rejected</strong> with full reasoning.</div>
+      </div>
+
+      <div class="agent-card">
+        <div class="ac-header">
+          <div class="ac-name">Execution</div>
+          <div class="ac-model">Deterministic · Paper Engine</div>
+        </div>
+        <div class="ac-trigger">Trigger: Per approved signal</div>
+        <div class="ac-desc">Pure state machine. Simulates order placement, applies realistic fill probability based on orderbook depth and volume, deducts fees, tracks positions and P&L in <strong>Cloudflare D1</strong>. Runs inventory checks every 60s. Closes epochs every 5 min.</div>
+      </div>
+
+      <div class="agent-card llm full">
+        <div class="ac-header">
+          <div class="ac-name">Reporter</div>
+          <div class="ac-model opus">claude-opus-4-7</div>
+        </div>
+        <div class="ac-trigger">Trigger: Every 5-minute epoch close</div>
+        <div class="ac-desc">Receives the full P&L breakdown and generates a plain-English attribution summary bucketed into <strong>spread capture / liquidity rewards / arb profits / fees</strong>. Produces the shareable epoch card. Always labels results as "paper trading" — never hides negative epochs.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ARCHITECTURE -->
+  <div class="about-section">
+    <div class="about-section-title">System Architecture</div>
+    <div class="arch-flow"><span class="dim">┌────────────────────────────────────────────────────────────┐
+│</span>                    <span class="hl">SKIM INTELLIGENCE</span>                         <span class="dim">│
+│</span>                                                            <span class="dim">│
+│</span>  <span class="hl">WS Streams</span>  →  <span class="hl">Scanner</span>  →  <span class="hl">Alpha ×10</span>  →  <span class="hl">Risk ×10</span>  →  <span class="hl">Execution</span>  <span class="dim">│
+│</span>  Bayse / Poly   (Durable     (Opus 4.7    (Opus 4.7    (Paper      <span class="dim">│
+│</span>                  Object)      parallel)    parallel)    engine)    <span class="dim">│
+│</span>                                                            <span class="dim">│
+│</span>                           Every 5 min: Epoch close  →  <span class="hl">Reporter</span>  <span class="dim">│
+│</span>                                                      (Opus 4.7)  <span class="dim">│
+│</span>                                                            <span class="dim">│
+│</span>  <span class="hl">Cloudflare D1</span> (SQLite ledger)   <span class="hl">Cloudflare KV</span> (snapshots)    <span class="dim">│
+│</span>  <span class="hl">Durable Objects</span> (orchestrator)  <span class="hl">Queues</span> (async dispatch)      <span class="dim">│
+│</span>                                                            <span class="dim">│
+│</span>         <span class="hl">React Dashboard</span>  ←  WebSocket  ←  Worker /api/ws     <span class="dim">│
+└────────────────────────────────────────────────────────────┘</span></div>
+  </div>
+
+  <!-- WEBSOCKET LAYER -->
+  <div class="about-section">
+    <div class="about-section-title">WebSocket Data Layer</div>
+    <table class="ws-table">
+      <tr>
+        <td>Polymarket</td>
+        <td>wss://ws-subscriptions-clob.polymarket.com/ws/market</td>
+        <td>Public · no auth · book deltas, price_change, best_bid_ask</td>
+      </tr>
+      <tr>
+        <td>Bayse</td>
+        <td>wss://relay.bayse.markets/ws/market-data</td>
+        <td>HMAC-SHA256 auth · orderbook snapshots, activity feed</td>
+      </tr>
+      <tr>
+        <td>Dashboard</td>
+        <td>wss://skim.workers.dev/api/ws</td>
+        <td>Durable Object hibernation API · signals, fills, epoch events</td>
+      </tr>
+    </table>
+    <p style="margin-top:14px;font-size:12px;color:var(--text-faint);line-height:1.7">
+      The Scanner Durable Object holds the two upstream connections. Outgoing WS connections do not support hibernation — the Scanner stays resident while live. Incoming dashboard connections use <code style="color:var(--cyan)">ctx.acceptWebSocket()</code> (Hibernation API) to avoid billing duration during idle. Bootstrap pattern: fetch REST snapshot on connect, then apply incremental <code style="color:var(--cyan)">book</code> deltas. On reconnect, re-fetch — no sequence numbers on Polymarket.
+    </p>
+  </div>
+
+  <!-- TECH STACK -->
+  <div class="about-section">
+    <div class="about-section-title">Tech Stack</div>
+    <table class="stack-table">
+      <tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr>
+      <tr><td>Agent runtime</td><td>Claude Managed Agents</td><td>Anthropic SDK — native orchestration, prize target</td></tr>
+      <tr><td>Model</td><td>claude-opus-4-7</td><td>Extended reasoning on market microstructure</td></tr>
+      <tr><td>API backend</td><td>Cloudflare Workers + Hono</td><td>Serverless, globally distributed, WS support</td></tr>
+      <tr><td>State machine</td><td>Cloudflare Durable Objects</td><td>Stateful orchestrator + WS connection host</td></tr>
+      <tr><td>Database</td><td>Cloudflare D1 (SQLite)</td><td>Paper trading ledger, signal history, epoch reports</td></tr>
+      <tr><td>Cache</td><td>Cloudflare KV</td><td>Market snapshots, rate limit counters, portfolio state</td></tr>
+      <tr><td>Queues</td><td>Cloudflare Queues</td><td>Async agent job dispatch</td></tr>
+      <tr><td>Frontend</td><td>Vite + React + Tailwind</td><td>Real-time dashboard via WebSocket</td></tr>
+      <tr><td>Market data</td><td>Bayse API + Polymarket</td><td>Live CLOB orderbooks via WebSocket streams</td></tr>
+    </table>
+  </div>
+
+  <!-- HACKATHON -->
+  <div class="about-section">
+    <div class="about-section-title">Hackathon Context</div>
+    <div class="submission-box">
+      <p><strong>Built in 5 days for the Anthropic Opus 4.7 Hackathon</strong> (submission deadline: April 26, 2026, 8 PM EST). The challenge theme: "Build From What You Know." Skim Intelligence is the intelligence layer of Skim — a Bayse-native liquidity engine for African prediction markets.</p>
+      <p>The demo centres on the Alpha Agent's live reasoning stream. Opus 4.7 analyses each market out loud — assessing spread quality, arb viability, inventory balance, and reward yield in real time. That transparency is the product differentiator: not a black box, but legible, auditable intelligence.</p>
+      <p>Licensed MIT. All agent prompts, paper trading engine, and orchestration logic are open source after submission.</p>
+    </div>
+    <div class="prize-grid">
+      <div class="prize-badge primary">Best Managed Agents</div>
+      <div class="prize-badge primary">Keep Thinking</div>
+      <div class="prize-badge">1st / 2nd / 3rd Place</div>
+      <div class="prize-badge">Impact + Demo</div>
+      <div class="prize-badge">Opus 4.7 Depth</div>
+    </div>
+  </div>
+
+  <!-- POST-HACKATHON ROADMAP -->
+  <div class="about-section">
+    <div class="about-section-title">Post-Hackathon Roadmap</div>
+    <div class="roadmap-row">
+      <div class="roadmap-from">Alpha Agent</div>
+      <div class="roadmap-arrow">→</div>
+      <div class="roadmap-to">Core reasoning engine for real execution decisions on live Bayse positions</div>
+    </div>
+    <div class="roadmap-row">
+      <div class="roadmap-from">Risk Agent</div>
+      <div class="roadmap-arrow">→</div>
+      <div class="roadmap-to">Production circuit breaker with real position limits and compliance rules</div>
+    </div>
+    <div class="roadmap-row">
+      <div class="roadmap-from">Execution Agent</div>
+      <div class="roadmap-arrow">→</div>
+      <div class="roadmap-to">Replace paper orders with live Bayse API calls — paper mode becomes shadow-mode test harness</div>
+    </div>
+    <div class="roadmap-row">
+      <div class="roadmap-from">Reporter Agent</div>
+      <div class="roadmap-arrow">→</div>
+      <div class="roadmap-to">User-facing P&L statements and daily share cards for Skim account holders</div>
+    </div>
+    <div class="roadmap-row">
+      <div class="roadmap-from">D1 Schema</div>
+      <div class="roadmap-arrow">→</div>
+      <div class="roadmap-to">Extended with users, deposits, ledger, withdrawals, Paystack integration</div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="about-footer">
+    <div class="about-footer-left">Skim Intelligence &mdash; Technical Build Brief v1.0</div>
+    <div class="about-footer-right">
+      Built with <span>claude-opus-4-7</span> + Claude Code<br>
+      Anthropic Hackathon · April 2026 · MIT License
+    </div>
+  </div>
+
+</div><!-- /aboutView -->
+
+<!-- MARKET DETAIL MODAL -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="modalTitle">TRUMP-2026</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <div class="modal-section-title">Orderbook (YES)</div>
+        <div class="ob-row ob-ask best"><span>Ask (best)</span><span>0.490</span><span>$420</span></div>
+        <div class="ob-row ob-ask"><span>Ask</span><span>0.495</span><span>$810</span></div>
+        <div class="ob-row ob-ask"><span>Ask</span><span>0.500</span><span>$1,240</span></div>
+        <div style="height:6px;border-bottom:1px solid var(--border);margin:4px 0"></div>
+        <div class="ob-row ob-bid best"><span>Bid (best)</span><span>0.470</span><span>$380</span></div>
+        <div class="ob-row ob-bid"><span>Bid</span><span>0.465</span><span>$640</span></div>
+        <div class="ob-row ob-bid"><span>Bid</span><span>0.460</span><span>$990</span></div>
+        <div style="margin-top:16px">
+          <div class="modal-section-title">Signal</div>
+          <div class="signal-badge enter">● Enter</div>
+          <div class="risk-badge approved" style="margin-left:6px">✓ Risk Approved</div>
+          <div style="margin-top:10px;font-size:11px;color:var(--text-dim);line-height:1.7" id="modalReasoning">
+            Loading reasoning…
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="modal-section-title">Market Stats</div>
+        <div class="stat-grid" id="modalStats">
+          <div class="stat-item"><div class="stat-label">Mid Price</div><div class="stat-value">0.480</div></div>
+          <div class="stat-item"><div class="stat-label">Spread %</div><div class="stat-value cyan">5.8%</div></div>
+          <div class="stat-item"><div class="stat-label">Vol 24h</div><div class="stat-value">$48,200</div></div>
+          <div class="stat-item"><div class="stat-label">Resolution</div><div class="stat-value">284d</div></div>
+          <div class="stat-item"><div class="stat-label">Reward Pool</div><div class="stat-value green">$1,240</div></div>
+          <div class="stat-item"><div class="stat-label">Score</div><div class="stat-value cyan">0.84</div></div>
+        </div>
+        <div style="margin-top:16px">
+          <div class="modal-section-title">Position</div>
+          <div class="stat-grid">
+            <div class="stat-item"><div class="stat-label">YES notional</div><div class="stat-value">$80.00</div></div>
+            <div class="stat-item"><div class="stat-label">NO notional</div><div class="stat-value">$76.40</div></div>
+            <div class="stat-item"><div class="stat-label">Unrealized P&L</div><div class="stat-value green">+$3.20</div></div>
+            <div class="stat-item"><div class="stat-label">Realized P&L</div><div class="stat-value green">+$22.80</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── TAB SWITCHING ──
+function switchTab(tab) {
+  const dash = document.getElementById('dashView');
+  const about = document.getElementById('aboutView');
+  const tDash = document.getElementById('tab-dashboard');
+  const tAbout = document.getElementById('tab-about');
+  if (tab === 'about') {
+    dash.classList.add('hidden');
+    about.classList.add('visible');
+    tDash.classList.remove('active');
+    tAbout.classList.add('active');
+  } else {
+    about.classList.remove('visible');
+    dash.classList.remove('hidden');
+    tAbout.classList.remove('active');
+    tDash.classList.add('active');
+  }
+}
+
+// ── REASONING TYPEWRITER ──
+const reasoningLines = [
+  "Analyzing TRUMP-2026 — Will Trump serve a full second term?",
+  "",
+  "STRATEGY LAYER 1 — MINT/BURN CHECK",
+  "  best_yes_bid=0.470  best_no_bid=0.520",
+  "  complement sum (bid) = 0.990 → burn margin = $0.010",
+  "  after taker fee (5.2% at P≈0.47): net = -$0.042",
+  "  BURN arb: NOT viable at current prices.",
+  "",
+  "  best_yes_ask=0.490  best_no_ask=0.515",
+  "  complement sum (ask) = 1.005 → mint margin = +$0.005",
+  "  after taker fee: net = -$0.047",
+  "  MINT arb: NOT viable. Reject Layer 1.",
+  "",
+  "STRATEGY LAYER 2 — CLOB MARKET MAKING",
+  "  mid_price = 0.480   spread_pct = 5.8%   ✓ (threshold 3%)",
+  "  yes_bid_depth = $380   yes_ask_depth = $420   ✓",
+  "  resolution_days = 284   ✓ (> 3 days)",
+  "  inventory: YES $80.00  NO $76.40 → imbalance 2.4%  ✓ (< 15%)",
+  "  quote width target: ±3¢ from mid (capture 2.5% round-trip)",
+  "  proposed: BID 0.469  ASK 0.491  notional cap $120",
+  "  MARKET MAKING: ENTER ✓",
+  "",
+  "STRATEGY LAYER 3 — REWARD FARMING",
+  "  two_sided_eligible = true",
+  "  reward_pool_remaining = $1,240   ✓ (> $50)",
+  "  estimated_reward_yield = +1.2% on top of spread",
+  "  REWARD FARMING: ENTER ✓ (incremental)",
+  "",
+  "COMPOSITE SCORE",
+  "  MM quality: 0.78   reward yield: 0.12   arb: 0.00",
+  "  → opportunity_score = 0.84",
+  "  RECOMMENDATION: enter"
+];
+
+let lineIdx = 0, charIdx = 0, textBuffer = "";
+const el = document.getElementById("reasoningText");
+const cursor = document.getElementById("cursor");
+let typingActive = true;
+
+function typeNext() {
+  if (!typingActive) return;
+  if (lineIdx >= reasoningLines.length) {
+    setTimeout(restartReasoning, 4000); return;
+  }
+  const line = reasoningLines[lineIdx];
+  if (charIdx < line.length) {
+    textBuffer += line[charIdx]; charIdx++;
+    el.textContent = textBuffer;
+    const delay = line[charIdx-1] === ' ' ? 18 : line[charIdx-1] === '\n' ? 60 : 22;
+    setTimeout(typeNext, delay);
+  } else {
+    textBuffer += "\n"; el.textContent = textBuffer;
+    lineIdx++; charIdx = 0;
+    const rb = document.getElementById("reasoningBody");
+    rb.scrollTop = rb.scrollHeight;
+    setTimeout(typeNext, lineIdx % 4 === 0 ? 180 : 55);
+  }
+}
+
+function restartReasoning() {
+  const markets = ["FED-MAY","BTC-100K","NIGERIA-PRES-2027","TRUMP-2026"];
+  const m = markets[Math.floor(Math.random()*markets.length)];
+  document.getElementById("reasoningMarket").textContent = m;
+  lineIdx = 0; charIdx = 0; textBuffer = "";
+  el.textContent = "";
+  typeNext();
+}
+
+typeNext();
+
+// ── LIVE EVENT FEED ──
+const eventTemplates = [
+  { cls:"fill",   type:"Fill",          fn:()=>`${rnd(["TRUMP-2026","FED-MAY","BTC-100K"])} ${rnd(["YES","NO"])} · $${(Math.random()*80+20).toFixed(2)} @ ${(Math.random()*.4+0.3).toFixed(3)}` },
+  { cls:"signal", type:"Signal",        fn:()=>`${rnd(["NIGERIA-PRES-2027","BTC-100K","EURO-2026"])} score ${(Math.random()*.5+0.4).toFixed(2)} · ${rnd(["MM enter","arb window","reward eligible"])}` },
+  { cls:"risk",   type:"Risk · Approved",fn:()=>`${rnd(["FED-MAY","TRUMP-2026","BTC-100K"])} · notional $${Math.floor(Math.random()*100+40)} approved` },
+  { cls:"reject", type:"Risk · Rejected",fn:()=>`${rnd(["EURO-2026","BTC-100K"])} · ${rnd(["snapshot stale","exposure cap hit","inventory imbalance 18%"])}` },
+  { cls:"epoch",  type:"Epoch Close",    fn:()=>`Epoch #${Math.floor(Math.random()*50+250)} · net ${Math.random()>.3?"+":"-"}$${(Math.random()*60+5).toFixed(2)} · Reporter generating…` },
+];
+function rnd(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+let elapsedSec = 60;
+
+function addEvent() {
+  const feed = document.getElementById("eventFeed");
+  const tpl = eventTemplates[Math.floor(Math.random()*eventTemplates.length)];
+  const div = document.createElement("div"); div.className = "event-item";
+  const mins = Math.floor(elapsedSec/60);
+  const secs = (elapsedSec%60).toString().padStart(2,'0');
+  div.innerHTML = `
+    <div class="event-dot ${tpl.cls}"></div>
+    <div class="event-text">
+      <div class="event-type">${tpl.type}</div>
+      <div class="event-body">${tpl.fn()}</div>
+    </div>
+    <div class="event-time">${mins}:${secs}</div>`;
+  feed.insertBefore(div, feed.firstChild);
+  while (feed.children.length > 12) feed.removeChild(feed.lastChild);
+  elapsedSec += Math.floor(Math.random()*18+4);
+}
+
+setInterval(addEvent, 2800);
+
+// ── COUNTERS ──
+let msgCount = 1842, fills = 147, pnl = 184.20;
+setInterval(()=>{
+  msgCount += Math.floor(Math.random()*8+2);
+  document.getElementById("msgCount").textContent = msgCount.toLocaleString();
+  document.getElementById("lastEvent").textContent = `${(Math.random()*1.5).toFixed(1)}s ago`;
+}, 1200);
+
+setInterval(()=>{
+  fills += 1;
+  pnl += (Math.random()*3 - 0.4);
+  document.getElementById("fillCount").textContent = fills;
+  const sign = pnl >= 0 ? "+" : "";
+  document.getElementById("netPnl").textContent = `${sign}$${pnl.toFixed(2)}`;
+}, 4500);
+
+// ── EPOCH TIMER ──
+let epochSecs = 221;
+setInterval(()=>{
+  epochSecs--;
+  if (epochSecs < 0) epochSecs = 300;
+  const m = Math.floor(epochSecs/60);
+  const s = (epochSecs%60).toString().padStart(2,'0');
+  document.getElementById("epochTimer").textContent = `Next close in ${m}:${s}`;
+}, 1000);
+
+// ── MODAL ──
+const modalData = {
+  "TRUMP-2026": {
+    title: "TRUMP-2026 — Will Trump serve a full second term?",
+    reasoning: "5.8% spread at P=0.47. Two-sided reward pool $1,240 remaining. Mint/burn arb not viable after 5.2% taker fees. Market making: BID 0.469 / ASK 0.491, ±3¢ quotes, $120 notional cap. Reward farming eligible. Score 0.84. Recommendation: enter."
+  },
+  "FED-MAY": {
+    title: "FED-MAY — Fed rate cut in May 2026?",
+    reasoning: "Complement sum (ask) = 1.009. After taker fees at P=0.62 (3.8%): net margin +4.1%. BURN arb viable. Maximum notional $80 (within depth). Score 0.71. Recommendation: enter burn arb."
+  },
+  "BTC-100K": {
+    title: "BTC-100K — Bitcoin above $100K by June?",
+    reasoning: "Spread 4.2% at P=0.71. Reward pool $640 remaining. Market making viable but low confidence due to high directional vol. Halved notional to $60. Score 0.63."
+  }
+};
+
+function openModal(id, title, mid, score, strat) {
+  const m = document.getElementById("modal");
+  const data = modalData[id] || { title, reasoning: `Analyzing ${id}…` };
+  document.getElementById("modalTitle").textContent = data.title;
+  document.getElementById("modalReasoning").textContent = data.reasoning;
+  m.classList.add("open");
+}
+function closeModal() { document.getElementById("modal").classList.remove("open"); }
+
+function copyCard() {
+  const txt = `Skim Intelligence\n+$184.20\nPaper net · 23 markets · 147 fills\nSpread: +$124 | Rewards: +$47 | Arb: +$31\nApr 22, 2026 · Paper only`;
+  navigator.clipboard.writeText(txt).then(()=>alert("Share card copied!")).catch(()=>{});
+}
+
+// ── QUEUE PULSE ──
+setInterval(()=>{
+  const scores = document.querySelectorAll(".opp-score.high");
+  scores.forEach(s => { s.style.opacity = s.style.opacity === "0.5" ? "1" : "0.5"; });
+  setTimeout(()=>scores.forEach(s=>s.style.opacity="1"), 250);
+}, 3000);
+</script>
+</body>
+</html>

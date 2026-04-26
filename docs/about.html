@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#080808">
+<meta name="description" content="Skim Intelligence — an autonomous five-agent prediction market system powered by Claude Opus 4.7. Built for the Anthropic Hackathon, April 2026.">
+<title>Skim Intelligence — Autonomous Prediction Market Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #080808;
+  --bg2:        #0e0e0e;
+  --bg3:        #131313;
+  --border:     rgba(247,244,239,0.07);
+  --border-mid: rgba(247,244,239,0.13);
+  --text:       #f7f4ef;
+  --text-dim:   rgba(247,244,239,0.5);
+  --text-faint: rgba(247,244,239,0.22);
+  --cyan:       #35e7ff;
+  --cyan-dim:   rgba(53,231,255,0.10);
+  --cyan-mid:   rgba(53,231,255,0.28);
+  --green:      #3dffa0;
+  --red:        #ff4e4e;
+  --amber:      #ffb347;
+
+  --pad-x: 32px;
+  --section-gap: 64px;
+}
+
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif; font-size: 14px; line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-mid); }
+
+a { color: inherit; }
+code { font-family: 'DM Mono', monospace; font-size: 0.9em; color: var(--cyan); word-break: break-word; }
+
+/* ── HEADER ── */
+header {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 var(--pad-x); height: 52px;
+  background: rgba(8,8,8,0.92);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding-top: env(safe-area-inset-top);
+  height: calc(52px + env(safe-area-inset-top));
+}
+.logo {
+  font-family: 'Cormorant Garamond', serif; font-size: 17px; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--text);
+  text-decoration: none;
+  display: flex; align-items: center; gap: 2px;
+}
+.logo span { color: var(--cyan); }
+.header-right { display: flex; align-items: center; gap: 16px; }
+.demo-link {
+  font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text); text-decoration: none;
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 14px;
+  border: 1px solid var(--cyan-mid); background: var(--cyan-dim);
+  color: var(--cyan);
+  transition: background .15s, border-color .15s;
+  min-height: 34px;
+}
+.demo-link:hover { background: rgba(53,231,255,0.18); border-color: var(--cyan); }
+.demo-link .arrow { font-family: 'DM Mono', monospace; }
+
+/* ── LAYOUT ── */
+.page {
+  display: grid; grid-template-columns: 200px 1fr;
+  min-height: calc(100vh - 52px);
+  max-width: 1160px; margin: 0 auto;
+}
+
+/* ── SIDEBAR NAV ── */
+aside {
+  position: sticky; top: 52px; align-self: start;
+  height: calc(100vh - 52px); overflow-y: auto;
+  padding: 40px 0 40px var(--pad-x);
+  border-right: 1px solid var(--border);
+}
+.sidenav-label { font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 16px; }
+.sidenav { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+.sidenav a {
+  display: block; padding: 8px 12px 8px 14px;
+  font-size: 12px; color: var(--text-faint); text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sidenav a:hover { color: var(--text-dim); }
+.sidenav a.active { color: var(--cyan); border-left-color: var(--cyan); }
+.sidenav-divider { height: 1px; background: var(--border); margin: 10px 0; }
+
+/* ── MAIN CONTENT ── */
+article {
+  padding: 60px 48px 100px 56px;
+  max-width: 780px;
+  min-width: 0;
+}
+
+/* ── HERO ── */
+.hero { padding-bottom: 56px; margin-bottom: 56px; border-bottom: 1px solid var(--border); }
+.eyebrow {
+  font-size: 10px; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--cyan); margin-bottom: 20px;
+  display: flex; align-items: center; gap: 12px;
+}
+.eyebrow::after { content: ''; flex: 1; max-width: 60px; height: 1px; background: var(--cyan-mid); }
+.hero-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(38px, 6vw + 8px, 72px);
+  font-weight: 300; line-height: 1.05;
+  color: var(--text); margin-bottom: 28px;
+  letter-spacing: -0.01em;
+}
+.hero-title em { font-style: italic; color: var(--cyan); }
+.hero-title strong { font-weight: 600; }
+.hero-lead {
+  font-size: clamp(14px, 1vw + 10px, 15px);
+  line-height: 1.8; color: var(--text-dim);
+  max-width: 620px;
+}
+.hero-lead strong { color: var(--text); font-weight: 500; }
+
+.hero-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 20px;
+  margin-top: 32px;
+  padding: 20px;
+  background: var(--bg2); border: 1px solid var(--border);
+}
+.meta-item { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.meta-label { font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: var(--text-faint); }
+.meta-value {
+  font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-dim);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.meta-value.hl { color: var(--cyan); }
+
+/* ── INSIGHT BLOCK ── */
+.insight {
+  margin: 40px 0 0;
+  padding: 28px 32px;
+  border-left: 2px solid var(--cyan);
+  background: var(--cyan-dim);
+  position: relative;
+}
+.insight::before {
+  content: '\201C';
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 80px; line-height: 1;
+  color: rgba(53,231,255,0.15);
+  position: absolute; top: 8px; left: 22px;
+  pointer-events: none;
+}
+.insight-label { font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: var(--cyan); margin-bottom: 14px; }
+.insight-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(16px, 1vw + 12px, 19px);
+  font-weight: 300; line-height: 1.65;
+  color: var(--text); position: relative;
+}
+
+/* ── SECTION ── */
+.section { margin-bottom: var(--section-gap); scroll-margin-top: 72px; }
+.section-title {
+  font-size: 10px; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--text-faint); margin-bottom: 28px;
+  padding-bottom: 10px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+}
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── STRATEGY GRID ── */
+.strategy-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1px; background: var(--border);
+  border: 1px solid var(--border);
+}
+.strategy-card { background: var(--bg2); padding: 24px 22px; min-width: 0; }
+.sc-num { font-family: 'Cormorant Garamond', serif; font-size: 48px; font-weight: 300; line-height: 1; color: rgba(247,244,239,0.06); margin-bottom: 12px; }
+.sc-name { font-size: 12px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--text); margin-bottom: 10px; }
+.sc-desc { font-size: 12px; color: var(--text-dim); line-height: 1.7; margin-bottom: 14px; }
+.sc-edge {
+  font-family: 'DM Mono', monospace; font-size: 10.5px; color: var(--cyan);
+  padding: 5px 8px; background: var(--bg3); border: 1px solid rgba(53,231,255,0.15);
+  display: inline-block; max-width: 100%;
+  word-break: break-word;
+}
+
+.fee-note {
+  margin-top: 20px; padding: 16px 20px;
+  background: var(--bg2); border: 1px solid var(--border);
+  font-size: 12px; color: var(--text-dim); line-height: 1.75;
+}
+
+/* ── PIPELINE VISUAL ── */
+.pipeline {
+  display: flex; align-items: stretch; gap: 0;
+  border: 1px solid var(--border); overflow: hidden;
+  margin-bottom: 20px;
+}
+.pipeline-step {
+  flex: 1; padding: 16px 14px; background: var(--bg2);
+  border-right: 1px solid var(--border);
+  text-align: center; position: relative; min-width: 0;
+}
+.pipeline-step:last-child { border-right: none; }
+.pipeline-step::after {
+  content: '→'; position: absolute; right: -9px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px; color: var(--border-mid);
+  z-index: 1; background: var(--bg);
+  width: 18px; text-align: center;
+}
+.pipeline-step:last-child::after { display: none; }
+.ps-name { font-size: 10px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--text); margin-bottom: 4px; }
+.ps-model { font-size: 9px; color: var(--cyan); margin-bottom: 6px; }
+.ps-desc { font-size: 10px; color: var(--text-faint); line-height: 1.5; }
+
+/* ── AGENT CARDS ── */
+.agent-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 1px; background: var(--border);
+  border: 1px solid var(--border);
+}
+.agent-card { background: var(--bg2); padding: 22px 24px; min-width: 0; }
+.agent-card.llm { border-top: 1px solid rgba(53,231,255,0.18); }
+.agent-card.full-width { grid-column: span 2; }
+.ac-top {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 8px; gap: 10px; flex-wrap: wrap;
+}
+.ac-name { font-size: 12px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--text); }
+.ac-badge {
+  font-size: 9px; letter-spacing: .08em; text-transform: uppercase;
+  padding: 3px 8px; border: 1px solid var(--border);
+  color: var(--text-faint); white-space: nowrap; flex-shrink: 0;
+}
+.ac-badge.opus { border-color: var(--cyan-mid); color: var(--cyan); background: var(--cyan-dim); }
+.ac-trigger { font-size: 10px; color: var(--text-faint); margin-bottom: 10px; letter-spacing: .02em; line-height: 1.5; }
+.ac-desc { font-size: 12px; color: var(--text-dim); line-height: 1.7; }
+.ac-desc strong { color: var(--text); font-weight: 500; }
+.ac-desc code { font-size: 11px; }
+
+/* ── ARCHITECTURE BLOCK ── */
+.arch-block {
+  background: #050505; border: 1px solid var(--border);
+  padding: 24px 28px;
+  overflow-x: auto;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px; line-height: 2.1;
+  white-space: pre;
+  -webkit-overflow-scrolling: touch;
+}
+.arch-block .hl { color: var(--cyan); }
+.arch-block .dim { color: rgba(247,244,239,0.18); }
+.arch-block .arrow { color: var(--text-faint); }
+
+.arch-note-grid {
+  margin-top: 16px;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 1px; background: var(--border); border: 1px solid var(--border);
+}
+.arch-note-cell { background: var(--bg2); padding: 14px 16px; min-width: 0; }
+.arch-note-cell h4 { font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 8px; font-weight: 400; }
+.arch-note-cell p { font-size: 12px; color: var(--text-dim); line-height: 1.7; }
+
+/* ── WS TABLE (desktop) / LIST (mobile) ── */
+.ws-list { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); margin-bottom: 16px; }
+.ws-row {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 16px;
+  padding: 14px 18px;
+  background: var(--bg2);
+  align-items: start;
+}
+.ws-label { font-size: 11px; color: var(--text-dim); letter-spacing: .04em; padding-top: 2px; }
+.ws-content { min-width: 0; }
+.ws-endpoint {
+  font-family: 'DM Mono', monospace; font-size: 11px; color: var(--cyan);
+  word-break: break-all; line-height: 1.5; margin-bottom: 6px;
+  display: block;
+}
+.ws-meta { font-size: 11px; color: var(--text-faint); line-height: 1.6; }
+.ws-meta code { font-size: 10px; }
+
+.ws-note {
+  font-size: 12px; color: var(--text-faint); line-height: 1.75;
+  padding: 16px 20px; background: var(--bg2); border: 1px solid var(--border);
+  border-left: 2px solid var(--border-mid);
+}
+.ws-note strong { color: var(--text); font-weight: 500; }
+
+/* ── TECH TABLE (adaptive) ── */
+.tech-table { width: 100%; border-collapse: collapse; }
+.tech-table th {
+  text-align: left; font-size: 9px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--text-faint);
+  padding: 0 0 10px; font-weight: 400;
+}
+.tech-table th:not(:last-child) { padding-right: 24px; }
+.tech-table td {
+  padding: 10px 0; border-top: 1px solid var(--border);
+  font-size: 12px; vertical-align: top;
+}
+.tech-table td:not(:last-child) { padding-right: 24px; }
+.tech-table td:first-child { color: var(--text-faint); width: 150px; }
+.tech-table td:nth-child(2) { color: var(--text); font-weight: 500; width: 210px; }
+.tech-table td:last-child { color: var(--text-faint); font-size: 11.5px; }
+
+/* ── HACKATHON ── */
+.submission-box {
+  background: var(--bg2); border: 1px solid var(--border);
+  padding: 28px 32px; position: relative; overflow: hidden;
+  margin-bottom: 20px;
+}
+.submission-box::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--cyan) 40%, transparent 100%);
+}
+.submission-box p { font-size: 13px; line-height: 1.85; color: var(--text-dim); }
+.submission-box p strong { color: var(--text); font-weight: 500; }
+.submission-box p + p { margin-top: 14px; }
+
+.prize-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.prize-badge {
+  padding: 6px 13px; border: 1px solid var(--border-mid);
+  font-size: 10px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--text-faint);
+}
+.prize-badge.primary { border-color: var(--cyan-mid); color: var(--cyan); background: var(--cyan-dim); }
+
+/* ── ROADMAP ── */
+.roadmap { border: 1px solid var(--border); overflow: hidden; }
+.roadmap-row {
+  display: grid; grid-template-columns: 160px 24px 1fr;
+  gap: 0; align-items: stretch;
+  border-bottom: 1px solid var(--border);
+}
+.roadmap-row:last-child { border-bottom: none; }
+.roadmap-from {
+  padding: 14px 16px; font-size: 11px; color: var(--text-faint);
+  background: var(--bg2); border-right: 1px solid var(--border);
+  display: flex; align-items: flex-start; padding-top: 16px;
+}
+.roadmap-arrow {
+  display: flex; align-items: center; justify-content: center;
+  padding: 14px 0; font-size: 12px; color: var(--border-mid);
+  background: var(--bg3); border-right: 1px solid var(--border);
+}
+.roadmap-to { padding: 14px 18px; font-size: 12px; color: var(--text-dim); line-height: 1.65; }
+.roadmap-to strong { color: var(--text); font-weight: 500; }
+
+/* ── DATA MODEL SNIPPET ── */
+.code-block {
+  background: #050505; border: 1px solid var(--border);
+  padding: 20px 24px; overflow-x: auto;
+  font-family: 'DM Mono', monospace; font-size: 11.5px; line-height: 1.8;
+  color: rgba(247,244,239,0.45);
+  -webkit-overflow-scrolling: touch;
+}
+.code-block .kw { color: var(--amber); }
+.code-block .ty { color: var(--cyan); }
+.code-block .cm { color: rgba(247,244,239,0.2); font-style: italic; }
+.code-block .st { color: var(--green); }
+
+.kv-note {
+  margin-top: 14px; font-size: 12px; color: var(--text-faint); line-height: 1.75;
+}
+.kv-note code { font-size: 11px; }
+
+/* ── CTA BLOCK ── */
+.cta-block {
+  margin-top: 40px; padding: 32px;
+  background: var(--bg2); border: 1px solid var(--border);
+  text-align: center; position: relative; overflow: hidden;
+}
+.cta-block::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+}
+.cta-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(22px, 2vw + 14px, 28px);
+  font-weight: 300; color: var(--text);
+  margin-bottom: 10px; line-height: 1.2;
+}
+.cta-sub { font-size: 13px; color: var(--text-dim); margin-bottom: 22px; line-height: 1.6; }
+.cta-btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 12px 24px; min-height: 44px;
+  border: 1px solid var(--cyan); color: var(--cyan);
+  font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+  text-decoration: none; background: var(--cyan-dim);
+  transition: background .15s;
+}
+.cta-btn:hover { background: rgba(53,231,255,0.2); }
+.cta-btn .arrow { font-family: 'DM Mono', monospace; }
+
+/* ── FOOTER ── */
+footer {
+  max-width: 1160px; margin: 0 auto;
+  padding: 28px 48px 28px calc(200px + 56px);
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 16px; flex-wrap: wrap;
+}
+.footer-left { font-family: 'Cormorant Garamond', serif; font-size: 13px; color: var(--text-faint); }
+.footer-right { font-size: 10px; color: var(--text-faint); text-align: right; line-height: 1.8; }
+.footer-right span { color: var(--cyan); }
+
+/* ════════════════════════════════════════════════════════════
+   RESPONSIVE — tablet (≤ 960px): hide sidebar, keep multi-col
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 960px) {
+  :root { --pad-x: 24px; --section-gap: 56px; }
+
+  .page { grid-template-columns: 1fr; }
+  aside { display: none; }
+  article { padding: 48px 24px 80px; max-width: 100%; }
+  footer { padding: 24px; }
+  footer { justify-content: center; text-align: center; }
+  .footer-right { text-align: center; }
+
+  .strategy-grid { grid-template-columns: 1fr 1fr; }
+  .strategy-card:last-child { grid-column: span 2; }
+
+  .roadmap-row { grid-template-columns: 140px 20px 1fr; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   RESPONSIVE — phone (≤ 640px): stack everything
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  :root { --pad-x: 18px; --section-gap: 48px; }
+
+  header { padding: 0 var(--pad-x); }
+  .logo { font-size: 15px; letter-spacing: .1em; }
+  .demo-link { padding: 6px 10px; font-size: 10px; letter-spacing: .08em; }
+  .demo-link .arrow { display: none; }
+
+  article { padding: 36px 18px 60px; }
+
+  .hero { padding-bottom: 40px; margin-bottom: 40px; }
+  .hero-title { margin-bottom: 20px; }
+  .hero-meta { padding: 16px; gap: 14px; grid-template-columns: 1fr 1fr; }
+
+  .insight { padding: 22px 20px 22px 24px; margin-top: 32px; }
+  .insight::before { font-size: 60px; top: 4px; left: 14px; }
+  .insight-text { font-size: 15px; }
+
+  .section-title { margin-bottom: 20px; }
+
+  /* Stack strategy cards fully */
+  .strategy-grid { grid-template-columns: 1fr; }
+  .strategy-card:last-child { grid-column: auto; }
+  .strategy-card { padding: 20px; }
+  .sc-num { font-size: 36px; }
+
+  /* Pipeline → vertical */
+  .pipeline { flex-direction: column; }
+  .pipeline-step {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 14px 14px;
+    display: grid; grid-template-columns: 1fr auto auto;
+    text-align: left; gap: 10px; align-items: baseline;
+  }
+  .pipeline-step:last-child { border-bottom: none; }
+  .pipeline-step::after {
+    content: '↓'; right: auto; left: 50%; top: auto; bottom: -10px;
+    transform: translateX(-50%);
+    background: var(--bg2); padding: 0 4px;
+  }
+  .ps-name { margin-bottom: 0; }
+  .ps-model { margin-bottom: 0; font-size: 10px; }
+  .ps-desc { font-size: 10px; }
+
+  /* Stack agent cards */
+  .agent-grid { grid-template-columns: 1fr; }
+  .agent-card.full-width { grid-column: span 1; }
+  .agent-card { padding: 18px 20px; }
+  .ac-top { flex-direction: column; gap: 6px; }
+  .ac-badge { align-self: flex-start; }
+
+  /* Architecture: smaller font + hint */
+  .arch-block {
+    padding: 18px; font-size: 10.5px; line-height: 2;
+    position: relative;
+  }
+  .arch-block::after {
+    content: 'swipe →'; position: absolute; top: 6px; right: 10px;
+    font-family: 'DM Sans', sans-serif; font-size: 9px;
+    letter-spacing: .1em; text-transform: uppercase;
+    color: var(--text-faint); pointer-events: none;
+  }
+
+  .arch-note-grid { grid-template-columns: 1fr; }
+
+  /* WS rows stack */
+  .ws-row { grid-template-columns: 1fr; gap: 8px; padding: 14px 16px; }
+  .ws-label {
+    font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--cyan); padding-top: 0;
+  }
+
+  .ws-note { padding: 14px 16px; font-size: 11.5px; }
+
+  /* Tech table → card rows */
+  .tech-table thead { display: none; }
+  .tech-table, .tech-table tbody, .tech-table tr { display: block; width: 100%; }
+  .tech-table tr {
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    background: var(--bg2);
+  }
+  .tech-table td {
+    display: block; padding: 0; border: none;
+    width: auto !important;
+  }
+  .tech-table td:first-child {
+    font-size: 9px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--text-faint); margin-bottom: 4px;
+  }
+  .tech-table td:nth-child(2) {
+    font-size: 13px; color: var(--text); margin-bottom: 6px;
+  }
+  .tech-table td:last-child {
+    font-size: 12px; color: var(--text-dim); line-height: 1.6;
+  }
+
+  /* Submission */
+  .submission-box { padding: 22px 20px; }
+  .submission-box p { font-size: 12.5px; }
+
+  /* Roadmap → stacked card rows */
+  .roadmap-row { grid-template-columns: 1fr; }
+  .roadmap-from {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--cyan);
+  }
+  .roadmap-arrow { display: none; }
+  .roadmap-to { padding: 12px 16px 16px; font-size: 12.5px; }
+
+  /* Code block */
+  .code-block { padding: 16px 18px; font-size: 10.5px; line-height: 1.7; }
+
+  /* CTA */
+  .cta-block { padding: 28px 20px; margin-top: 32px; }
+
+  /* Footer */
+  footer { padding: 20px; font-size: 10px; }
+  .footer-left { font-size: 12px; }
+}
+
+/* Small phone (≤ 380px) */
+@media (max-width: 380px) {
+  .hero-meta { grid-template-columns: 1fr; }
+  .prize-badge { font-size: 9px; padding: 5px 10px; }
+  .header-right { gap: 8px; }
+  .demo-link { padding: 5px 8px; font-size: 9.5px; }
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Skim<span>.</span>Intelligence</div>
+  <div class="header-right">
+    <a href="skim.html" class="demo-link">
+      Live Demo <span class="arrow">→</span>
+    </a>
+  </div>
+</header>
+
+<div class="page">
+
+  <!-- SIDEBAR NAV (desktop only) -->
+  <aside>
+    <div class="sidenav-label">Contents</div>
+    <ul class="sidenav" id="sidenav">
+      <li><a href="#overview" class="active">Overview</a></li>
+      <li><a href="#strategies">Strategy Layers</a></li>
+      <li><a href="#agents">Five Agents</a></li>
+      <li><a href="#architecture">Architecture</a></li>
+      <div class="sidenav-divider"></div>
+      <li><a href="#websockets">WebSocket Layer</a></li>
+      <li><a href="#datamodel">Data Model</a></li>
+      <li><a href="#techstack">Tech Stack</a></li>
+      <div class="sidenav-divider"></div>
+      <li><a href="#hackathon">Hackathon</a></li>
+      <li><a href="#roadmap">Roadmap</a></li>
+    </ul>
+  </aside>
+
+  <!-- MAIN -->
+  <article>
+
+    <!-- HERO -->
+    <section class="hero" id="overview">
+      <div class="eyebrow">Anthropic Opus 4.7 Hackathon &nbsp;·&nbsp; April 2026</div>
+      <h1 class="hero-title">
+        Autonomous<br>
+        prediction market<br>
+        <em>intelligence</em>
+      </h1>
+      <p class="hero-lead">
+        Skim Intelligence is a <strong>five-agent system powered by Claude Opus 4.7</strong> that autonomously scans live prediction market orderbooks, reasons about structural yield opportunities, paper-trades approved signals, and attributes performance at every epoch close.
+        <br><br>
+        It makes <strong>no directional bets</strong>. Every edge it extracts — maker rebates, liquidity rewards, mint/burn arbitrage — is available regardless of whether markets resolve YES or NO. The intelligence layer of Skim, a liquidity engine for African prediction markets.
+      </p>
+
+      <div class="hero-meta">
+        <div class="meta-item">
+          <div class="meta-label">Model</div>
+          <div class="meta-value hl">claude-opus-4-7</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Runtime</div>
+          <div class="meta-value">Claude Managed Agents</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Infrastructure</div>
+          <div class="meta-value">Cloudflare Workers + D1</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Mode</div>
+          <div class="meta-value">Paper trading</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">License</div>
+          <div class="meta-value">MIT</div>
+        </div>
+      </div>
+
+      <div class="insight">
+        <div class="insight-label">Core Insight</div>
+        <div class="insight-text">Prediction markets pay bots to exist. Maker rebates, liquidity rewards, and mint/burn arbitrage are structural edges baked into platform design — available regardless of whether markets resolve YES or NO. Most operators access these edges through hardcoded rules. Skim uses Opus 4.7 to reason about each market situation dynamically, the way a sophisticated quantitative analyst would.</div>
+      </div>
+    </section>
+
+    <!-- STRATEGIES -->
+    <section class="section" id="strategies">
+      <div class="section-title">Three Strategy Layers</div>
+      <div class="strategy-grid">
+        <div class="strategy-card">
+          <div class="sc-num">01</div>
+          <div class="sc-name">Mint / Burn Arbitrage</div>
+          <div class="sc-desc">A YES share + NO share = $1.00 by protocol invariant. When the complement sum drifts above or below $1.00 by more than the taker fee, a risk-free arb exists. The Alpha Agent checks both legs simultaneously and hard-rejects if the snapshot is stale (&gt;60s old).</div>
+          <div class="sc-edge">net margin &gt; 3.2% @ P&gt;0.70</div>
+        </div>
+        <div class="strategy-card">
+          <div class="sc-num">02</div>
+          <div class="sc-name">CLOB Market Making</div>
+          <div class="sc-desc">Post two-sided limit orders at ±3¢ from mid, capturing the bid-ask spread on fills. Zero maker fees on Bayse. Inventory neutrality enforced — YES and NO positions must stay within ±15% of each other by notional to prevent directional drift.</div>
+          <div class="sc-edge">spread &gt; 3% · depth &gt; $200</div>
+        </div>
+        <div class="strategy-card">
+          <div class="sc-num">03</div>
+          <div class="sc-name">Liquidity Reward Farming</div>
+          <div class="sc-desc">Bayse pays from a fixed pool per market for resting two-sided orders. Market-making orders automatically qualify when <code>two_sided_eligible = true</code>. Incremental yield stacked on top of spread capture — no additional capital deployed.</div>
+          <div class="sc-edge">pool &gt; $50 · est. +1.2% yield</div>
+        </div>
+      </div>
+
+      <div class="fee-note">
+        <strong style="color:var(--text)">Taker fee schedule</strong> drives arb thresholds: P = 0.30–0.50 → 5–7% fee (need 6%+ gross); P = 0.50–0.70 → 3–5% fee (sweet spot for MM); P &gt; 0.70 → 3% floor (cheapest arb zone). All three layers are evaluated simultaneously on every market snapshot.
+      </div>
+    </section>
+
+    <!-- FIVE AGENTS -->
+    <section class="section" id="agents">
+      <div class="section-title">The Five Agents</div>
+
+      <!-- Pipeline visual -->
+      <div class="pipeline">
+        <div class="pipeline-step">
+          <div class="ps-name">Scanner</div>
+          <div class="ps-model">Deterministic</div>
+          <div class="ps-desc">WS → KV</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="ps-name">Alpha ×10</div>
+          <div class="ps-model">Opus 4.7</div>
+          <div class="ps-desc">Reasoning</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="ps-name">Risk ×10</div>
+          <div class="ps-model">Opus 4.7</div>
+          <div class="ps-desc">Validate</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="ps-name">Execution</div>
+          <div class="ps-model">Paper engine</div>
+          <div class="ps-desc">Fills → D1</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="ps-name">Reporter</div>
+          <div class="ps-model">Opus 4.7</div>
+          <div class="ps-desc">Attribution</div>
+        </div>
+      </div>
+
+      <div class="agent-grid">
+
+        <div class="agent-card">
+          <div class="ac-top">
+            <div class="ac-name">Scanner</div>
+            <div class="ac-badge">Deterministic</div>
+          </div>
+          <div class="ac-trigger">Trigger: WebSocket book delta (Bayse + Polymarket)</div>
+          <div class="ac-desc">
+            Holds persistent outgoing WS connections to <strong>relay.bayse.markets</strong> and <strong>ws-subscriptions-clob.polymarket.com</strong>. Runs inside a Cloudflare Durable Object so connections survive across requests. On each <code>book</code> delta event, computes derived metrics: mid price, spread %, bid/ask depth, complement sum, reward eligibility, data freshness. Writes <code>MarketSnapshot</code> to KV at key <code>market:{id}:snapshot</code>.
+          </div>
+        </div>
+
+        <div class="agent-card llm">
+          <div class="ac-top">
+            <div class="ac-name">Alpha</div>
+            <div class="ac-badge opus">claude-opus-4-7</div>
+          </div>
+          <div class="ac-trigger">Trigger: Per market snapshot (parallel, max 10 concurrent)</div>
+          <div class="ac-desc">
+            The core intelligence and the demo centrepiece. Receives the full market snapshot plus current portfolio state and reasons through <strong>all three strategy layers simultaneously</strong>. Outputs a structured JSON signal with <code>opportunity_score</code> (0–1), per-strategy action plans, <code>risk_flags</code>, and the full <code>thinking</code> text — streamed live to the dashboard as it generates. This raw reasoning is intentionally exposed: legible, auditable intelligence.
+          </div>
+        </div>
+
+        <div class="agent-card llm">
+          <div class="ac-top">
+            <div class="ac-name">Risk</div>
+            <div class="ac-badge opus">claude-opus-4-7</div>
+          </div>
+          <div class="ac-trigger">Trigger: Per Alpha signal where recommendation = "enter"</div>
+          <div class="ac-desc">
+            The circuit breaker. Enforces <strong>hard limits</strong> — daily loss cap, per-market exposure ceiling, total portfolio exposure, data freshness (hard-rejects if snapshot age &gt; 60s), inventory imbalance above 20%, execution mode guard. Applies <strong>soft modifications</strong> — halves notional on low-confidence signals, downgrades near-resolution markets. Returns <code>approved</code> / <code>modified</code> / <code>rejected</code> with full reasoning.
+          </div>
+        </div>
+
+        <div class="agent-card">
+          <div class="ac-top">
+            <div class="ac-name">Execution</div>
+            <div class="ac-badge">Paper Engine</div>
+          </div>
+          <div class="ac-trigger">Trigger: Per approved or modified Risk decision</div>
+          <div class="ac-desc">
+            Pure state machine — no LLM. Simulates order placement using a <strong>realistic fill model</strong>: maker orders fill probabilistically based on volume/depth ratio (max 85%); taker arb orders fill at 95% within top-of-book, 60% at second level, with ±0.2% slippage. Writes orders, fills, and positions to <strong>Cloudflare D1</strong>. Runs inventory rebalance checks every 60s. Closes epochs every 5 minutes.
+          </div>
+        </div>
+
+        <div class="agent-card llm full-width">
+          <div class="ac-top">
+            <div class="ac-name">Reporter</div>
+            <div class="ac-badge opus">claude-opus-4-7</div>
+          </div>
+          <div class="ac-trigger">Trigger: Every 5-minute epoch close — receives full P&L breakdown from Execution</div>
+          <div class="ac-desc">
+            Generates a plain-English attribution summary bucketed into <strong>spread capture / liquidity rewards / arb profits / fees paid</strong>, then produces the shareable epoch card data. Hard rules: always label results as "paper trading"; use "estimated" for unconfirmed reward income; never hide negative epochs. Output feeds the Share Card component and the epoch history in D1.
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ARCHITECTURE -->
+    <section class="section" id="architecture">
+      <div class="section-title">System Architecture</div>
+
+      <div class="arch-block"><span class="dim">┌──────────────────────────────────────────────────────────────┐
+│</span>                      <span class="hl">SKIM INTELLIGENCE</span>                           <span class="dim">│
+├──────────────────────────────────────────────────────────────┤
+│</span>                                                              <span class="dim">│
+│  DATA INGESTION</span>                                              <span class="dim">│
+│</span>  <span class="hl">Bayse WS</span>  ─┐                                               <span class="dim">│
+│</span>              <span class="arrow">├─→</span>  <span class="hl">Scanner DO</span>  <span class="arrow">─→</span>  KV: market:{id}:snapshot      <span class="dim">│
+│</span>  <span class="hl">Poly WS</span>   ─┘   (Durable Object, stays resident)           <span class="dim">│
+│</span>                                                              <span class="dim">│
+│  INTELLIGENCE CYCLE</span>  <span class="dim">(event-driven)</span>                          <span class="dim">│
+│</span>  KV snapshot  <span class="arrow">─→</span>  <span class="hl">Alpha Agent ×10</span>  <span class="arrow">─→</span>  <span class="hl">Risk Agent ×10</span>        <span class="dim">│
+│</span>                    (Opus 4.7,           (Opus 4.7,            <span class="dim">│
+│</span>                     parallel)            parallel)            <span class="dim">│
+│</span>                                              <span class="arrow">│</span>                <span class="dim">│
+│</span>                                              <span class="arrow">↓</span>                <span class="dim">│
+│</span>                                     <span class="hl">Execution Agent</span>          <span class="dim">│
+│</span>                                     (paper fills → D1)        <span class="dim">│
+│</span>                                                              <span class="dim">│
+│  EPOCH CLOSE</span>  <span class="dim">(every 5 minutes)</span>                             <span class="dim">│
+│</span>  D1 fills + P&L  <span class="arrow">─→</span>  <span class="hl">Reporter Agent</span>  <span class="arrow">─→</span>  epoch_reports        <span class="dim">│
+│</span>                       (Opus 4.7)                              <span class="dim">│
+│</span>                                                              <span class="dim">│
+│  REAL-TIME FEED</span>                                              <span class="dim">│
+│</span>  <span class="hl">Orchestrator DO</span>  <span class="arrow">─→</span>  WS /api/ws  <span class="arrow">─→</span>  <span class="hl">React Dashboard</span>         <span class="dim">│
+│</span>  (hibernation API)                   (ReasoningFeed, etc.)    <span class="dim">│
+└──────────────────────────────────────────────────────────────┘</span></div>
+
+      <div class="arch-note-grid">
+        <div class="arch-note-cell">
+          <h4>Orchestrator</h4>
+          <p>Cloudflare Durable Object. Coordinates the full pipeline, holds WebSocket connections to the frontend, maintains cycle state. Survives across requests — state persists in DO Storage.</p>
+        </div>
+        <div class="arch-note-cell">
+          <h4>Execution Mode</h4>
+          <p>Toggled via <code>POST /api/admin/mode</code>. Options: <code>observe</code> (no fills) · <code>paper</code> (simulated) · <code>live_limited</code>. Always default to paper in development.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- WEBSOCKET LAYER -->
+    <section class="section" id="websockets">
+      <div class="section-title">WebSocket Data Layer</div>
+
+      <div class="ws-list">
+        <div class="ws-row">
+          <div class="ws-label">Polymarket</div>
+          <div class="ws-content">
+            <code class="ws-endpoint">wss://ws-subscriptions-clob.polymarket.com/ws/market</code>
+            <div class="ws-meta">Public · no auth required · events: <code>book</code>, <code>price_change</code>, <code>best_bid_ask</code>, <code>market_resolved</code> · PING every 10s required.</div>
+          </div>
+        </div>
+        <div class="ws-row">
+          <div class="ws-label">Bayse</div>
+          <div class="ws-content">
+            <code class="ws-endpoint">wss://relay.bayse.markets/ws/market-data</code>
+            <div class="ws-meta">HMAC-SHA256 auth with <code>BAYSE_API_KEY</code> / <code>BAYSE_API_SECRET</code> · orderbook snapshots, activity feed, price updates. Docs at docs.bayse.markets.</div>
+          </div>
+        </div>
+        <div class="ws-row">
+          <div class="ws-label">Dashboard</div>
+          <div class="ws-content">
+            <code class="ws-endpoint">wss://skim.workers.dev/api/ws</code>
+            <div class="ws-meta">Cloudflare Durable Object hibernation API · broadcasts signals, fills, risk decisions, epoch closes. Requires <code>binaryType = "arraybuffer"</code> post-March 2026.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ws-note">
+        <strong>Bootstrap pattern:</strong> On connect, fetch the initial orderbook via REST (<code>GET /book?token_id=&lt;id&gt;</code>), then subscribe and apply incoming <code>book</code> delta messages. Re-fetch on reconnect — Polymarket has no sequence numbers so deltas cannot be replayed. Bayse similarly requires a snapshot on reconnect.
+        <br><br>
+        <strong>Cloudflare limits:</strong> Outgoing WS connections (Scanner → Bayse/Polymarket) do not support hibernation — the Scanner DO must stay resident. Incoming dashboard connections use <code>ctx.acceptWebSocket()</code> for hibernation. Max message size 32 MiB. Idle timeout 100s on Free/Pro — keepalive pings required.
+      </div>
+    </section>
+
+    <!-- DATA MODEL -->
+    <section class="section" id="datamodel">
+      <div class="section-title">Data Model (D1 / KV)</div>
+
+      <div class="code-block"><span class="cm">-- Core tables in Cloudflare D1 (SQLite)</span>
+
+<span class="kw">CREATE TABLE</span> <span class="ty">signals</span> (
+  id                 <span class="ty">TEXT</span> <span class="kw">PRIMARY KEY</span>,
+  market_id          <span class="ty">TEXT</span> <span class="kw">NOT NULL</span>,
+  opportunity_score  <span class="ty">REAL</span>,
+  recommendation     <span class="ty">TEXT</span>,   <span class="cm">-- enter | observe | skip</span>
+  thinking           <span class="ty">TEXT</span>,   <span class="cm">-- full Alpha reasoning</span>
+  reasoning_summary  <span class="ty">TEXT</span>,
+  strategies_json    <span class="ty">JSON</span>,
+  created_at         <span class="ty">TEXT</span>
+);
+
+<span class="kw">CREATE TABLE</span> <span class="ty">risk_decisions</span> (
+  id                   <span class="ty">TEXT</span> <span class="kw">PRIMARY KEY</span>,
+  signal_id            <span class="ty">TEXT</span> <span class="kw">REFERENCES</span> signals(id),
+  decision             <span class="ty">TEXT</span>,   <span class="cm">-- approved | modified | rejected</span>
+  hard_limit_triggered <span class="ty">TEXT</span>,
+  modifications_json   <span class="ty">JSON</span>
+);
+
+<span class="kw">CREATE TABLE</span> <span class="ty">paper_fills</span> (
+  id                <span class="ty">TEXT</span> <span class="kw">PRIMARY KEY</span>,
+  order_id          <span class="ty">TEXT</span> <span class="kw">REFERENCES</span> paper_orders(id),
+  fill_price        <span class="ty">REAL</span>,
+  fill_notional_usd <span class="ty">REAL</span>,
+  fee_usd           <span class="ty">REAL</span>,
+  slippage_usd      <span class="ty">REAL</span>,
+  filled_at         <span class="ty">TEXT</span>
+);
+
+<span class="kw">CREATE TABLE</span> <span class="ty">epoch_reports</span> (
+  id               <span class="ty">TEXT</span> <span class="kw">PRIMARY KEY</span>,
+  headline         <span class="ty">TEXT</span>,
+  attribution_json <span class="ty">JSON</span>,   <span class="cm">-- spread/rewards/arb/fees</span>
+  narrative        <span class="ty">TEXT</span>,
+  share_card_json  <span class="ty">JSON</span>,
+  net_pnl_usd      <span class="ty">REAL</span>
+);</div>
+
+      <div class="kv-note">
+        KV keys: <code>market:{id}:snapshot</code> (latest orderbook state) · <code>orchestrator:state</code> · <code>portfolio:state</code> · <code>rate:alpha:{market_id}</code> (1 Alpha call per market per 2 min).
+      </div>
+    </section>
+
+    <!-- TECH STACK -->
+    <section class="section" id="techstack">
+      <div class="section-title">Tech Stack</div>
+      <table class="tech-table">
+        <thead>
+          <tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Agent runtime</td><td>Claude Managed Agents</td><td>Anthropic SDK — native orchestration, hackathon prize target</td></tr>
+          <tr><td>Model</td><td>claude-opus-4-7</td><td>Extended reasoning on market microstructure across 3 simultaneous strategy layers</td></tr>
+          <tr><td>API backend</td><td>Cloudflare Workers + Hono</td><td>Serverless, globally distributed, native WebSocket support</td></tr>
+          <tr><td>State machine</td><td>Cloudflare Durable Objects</td><td>Stateful orchestrator, Scanner WS host, incoming dashboard WS broker</td></tr>
+          <tr><td>Database</td><td>Cloudflare D1 (SQLite)</td><td>Paper trading ledger, signal history, risk decisions, epoch reports</td></tr>
+          <tr><td>Cache</td><td>Cloudflare KV</td><td>Market snapshots, rate limit counters, portfolio state</td></tr>
+          <tr><td>Queues</td><td>Cloudflare Queues</td><td>Async agent job dispatch between orchestrator cycles</td></tr>
+          <tr><td>Frontend</td><td>Vite + React + Tailwind</td><td>Real-time dashboard via WebSocket, streaming reasoning feed</td></tr>
+          <tr><td>Market data</td><td>Bayse API (primary)</td><td>Live CLOB orderbooks, reward pools, fill data via WS streams</td></tr>
+          <tr><td>Fallback data</td><td>Polymarket CLOB API</td><td>Public WS fallback when Bayse unavailable during development</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- HACKATHON -->
+    <section class="section" id="hackathon">
+      <div class="section-title">Hackathon Context</div>
+
+      <div class="submission-box">
+        <p><strong>Built in 5 days for the Anthropic Opus 4.7 Hackathon.</strong> Submission deadline: April 26, 2026, 8 PM EST. Theme: "Build From What You Know." Skim Intelligence is the intelligence layer of Skim — a Bayse-native liquidity engine for African prediction markets currently in development.</p>
+        <p>The demo centres on the Alpha Agent's live reasoning stream. Opus 4.7 analyses each market out loud — assessing spread quality, arb viability, inventory balance, and reward yield in real time. That transparency is the product differentiator: not a black box, but legible, auditable intelligence that a user can inspect and trust.</p>
+        <p>The five-day build sequence: Day 1 — live market data via WS; Day 2 — Alpha Agent reasoning in UI; Day 3 — paper trading end-to-end; Day 4 — dashboard polish + share card; Day 5 — submission. Licensed MIT. All agent prompts, orchestration logic, and paper trading engine published open source at submission.</p>
+      </div>
+
+      <div class="prize-row">
+        <div class="prize-badge primary">Best Managed Agents</div>
+        <div class="prize-badge primary">Keep Thinking</div>
+        <div class="prize-badge">1st / 2nd / 3rd Place</div>
+        <div class="prize-badge">Impact + Demo</div>
+        <div class="prize-badge">Opus 4.7 Depth</div>
+      </div>
+    </section>
+
+    <!-- ROADMAP -->
+    <section class="section" id="roadmap">
+      <div class="section-title">Post-Hackathon Roadmap</div>
+      <p style="font-size:13px;color:var(--text-dim);line-height:1.75;margin-bottom:20px">This codebase is not a throwaway. The paper trading engine becomes the PAPER mode from Skim PRD v2.1 — the shadow-mode test harness for Milestone A. Each component maps directly to a production use case.</p>
+      <div class="roadmap">
+        <div class="roadmap-row">
+          <div class="roadmap-from">Alpha Agent</div>
+          <div class="roadmap-arrow">→</div>
+          <div class="roadmap-to">Core reasoning engine for <strong>real execution decisions</strong> on live Bayse positions. Prompt and strategy config become user-tunable parameters.</div>
+        </div>
+        <div class="roadmap-row">
+          <div class="roadmap-from">Risk Agent</div>
+          <div class="roadmap-arrow">→</div>
+          <div class="roadmap-to"><strong>Production circuit breaker</strong> with real position limits, user-specific daily loss caps, and regulatory compliance rules for Nigerian market operations.</div>
+        </div>
+        <div class="roadmap-row">
+          <div class="roadmap-from">Execution Agent</div>
+          <div class="roadmap-arrow">→</div>
+          <div class="roadmap-to">Replace paper order simulation with <strong>live Bayse API calls</strong>. Paper mode becomes the shadow-mode test harness — runs alongside live execution for comparison.</div>
+        </div>
+        <div class="roadmap-row">
+          <div class="roadmap-from">Reporter Agent</div>
+          <div class="roadmap-arrow">→</div>
+          <div class="roadmap-to"><strong>User-facing P&L statements</strong> and daily share cards for Skim account holders. Attribution methodology documented publicly as the trust surface.</div>
+        </div>
+        <div class="roadmap-row">
+          <div class="roadmap-from">Orchestrator</div>
+          <div class="roadmap-arrow">→</div>
+          <div class="roadmap-to">Always-on Durable Object with <strong>Cron Triggers</strong> for guaranteed cycle execution. Add user session management and per-user strategy isolation.</div>
+        </div>
+        <div class="roadmap-row">
+          <div class="roadmap-from">D1 Schema</div>
+          <div class="roadmap-arrow">→</div>
+          <div class="roadmap-to">Extended with <strong>users, deposits, ledger, withdrawals</strong>, and Paystack integration for NGN/USD flows. Open source repo becomes the public trust surface.</div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="cta-block">
+        <div class="cta-title">See the system running live</div>
+        <div class="cta-sub">Opus 4.7 reasoning, simulated fills, and attribution — streaming in real time.</div>
+        <a href="skim.html" class="cta-btn">Open Live Dashboard <span class="arrow">→</span></a>
+      </div>
+    </section>
+
+  </article>
+</div>
+
+<footer>
+  <div class="footer-left">Skim Intelligence &mdash; Technical Build Brief v1.0</div>
+  <div class="footer-right">
+    Built with <span>claude-opus-4-7</span> + Claude Code<br>
+    Anthropic Hackathon · April 2026 · MIT License
+  </div>
+</footer>
+
+<script>
+// Sticky sidenav scroll tracking (desktop only — sidebar hidden on mobile)
+const sections = document.querySelectorAll('section[id], .hero[id]');
+const navLinks = document.querySelectorAll('#sidenav a');
+
+if (window.IntersectionObserver && window.matchMedia('(min-width: 961px)').matches) {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(a => a.classList.remove('active'));
+        const active = document.querySelector(`#sidenav a[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+
+  sections.forEach(s => observer.observe(s));
+}
+</script>
+</body>
+</html>

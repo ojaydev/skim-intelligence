@@ -1,0 +1,14 @@
+installation:
+  version: 6.3.0
+  installDate: 2026-04-22T08:29:42.259Z
+  lastUpdated: 2026-04-22T08:29:42.259Z
+modules:
+  - name: core
+    version: 6.3.0
+    installDate: 2026-04-22T08:29:42.191Z
+    lastUpdated: 2026-04-22T08:29:42.259Z
+    source: built-in
+    npmPackage: null
+    repoUrl: null
+ides:
+  - claude-code
