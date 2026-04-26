@@ -128,14 +128,18 @@ pnpm typecheck         # tsc --noEmit across all packages
 │   │   │   └── index.ts         # Hono router entry
 │   │   ├── migrations/          # D1 SQL migrations
 │   │   └── wrangler.toml
-│   └── web/           # React + Vite dashboard
-│       ├── src/
-│       │   ├── App.tsx              # dashboard composition
-│       │   ├── Wallet.tsx           # Clerk-gated wallet + Paystack deposits
-│       │   ├── useBayseBridge.ts    # browser-side Bayse WS relay
-│       │   ├── api.ts               # REST + WS clients
-│       │   └── index.css            # full design tokens
-│       └── vite.config.ts
+│   ├── web/           # React + Vite dashboard
+│   │   ├── src/
+│   │   │   ├── App.tsx              # dashboard composition
+│   │   │   ├── Wallet.tsx           # Clerk-gated wallet + Paystack deposits
+│   │   │   ├── useBayseBridge.ts    # browser-side Bayse WS relay (fallback)
+│   │   │   ├── api.ts               # REST + WS clients
+│   │   │   └── index.css            # full design tokens
+│   │   └── vite.config.ts
+│   └── relay/         # Standalone Node relay for Bayse data
+│       ├── index.mjs              # event seed + 5s synthetic-orderbook poll
+│       ├── probe.mjs              # WS protocol diagnostic
+│       └── README.md              # VPS deploy + systemd / NSSM unit
 └── packages/
     └── shared/        # TypeScript types shared between worker + web
         └── src/types.ts
@@ -148,7 +152,7 @@ pnpm typecheck         # tsc --noEmit across all packages
 - **Streaming Alpha reasoning** via `input_json_delta` events — the dashboard renders Opus's thinking token-by-token as it generates
 - **Cloudflare Durable Objects** for Scanner (holds long-lived upstream WS connections — outgoing WS can't hibernate) and Orchestrator (uses Hibernation API for dashboard WS clients)
 - **Rate limiting** via KV: 1 Alpha call per market per 2 minutes (brief §5.2)
-- **Hybrid browser relay for Bayse**: Bayse's WAF blocks Cloudflare Workers egress on both REST and WS-subscribe. Dashboard (user's residential IP) opens a WS to Bayse directly and forwards orderbook updates to the Worker via `/api/bayse/orderbook`. The scanner seeds event IDs from KV (refreshed from shell or a non-CF cron)
+- **Bayse data via standalone relay** (`apps/relay`): Bayse's WAF blocks Cloudflare Workers egress on REST and silently drops orderbook subscribes from filtered IPs even where REST passes. The relay runs on a non-CF host (VPS, residential), refreshes the event seed every 30 min, and posts synthetic 5-level orderbook frames every 5s built from `outcome1Price` / `outcome2Price` + event `liquidity`. Real WS frames overwrite synthetic ones if a WS-permitted egress is found. The browser bridge in `useBayseBridge.ts` remains as a dev fallback when `RELAY_SECRET` is unset
 
 ## API
 
@@ -162,7 +166,8 @@ pnpm typecheck         # tsc --noEmit across all packages
 | `GET /api/wallet` | *(Clerk auth)* Balance + ledger history |
 | `POST /api/wallet/deposits/init` | *(Clerk auth)* Initialize Paystack deposit, returns `authorization_url` |
 | `POST /api/webhooks/paystack` | Paystack event receiver (HMAC-SHA512 verified) |
-| `POST /api/bayse/orderbook` | Ingest from browser WS relay |
+| `POST /api/bayse/orderbook` | Ingest from `apps/relay` (or browser bridge in dev). Requires `X-Relay-Auth: $RELAY_SECRET` when the secret is set |
+| `POST /api/admin/bayse/seed` | Seed `BayseEvent[]` into KV. Same auth requirement |
 | `POST /api/admin/cycle/start` | Start auto-orchestration |
 | `POST /api/admin/cycle/stop` | Stop auto-orchestration |
 | `POST /api/admin/alpha/:marketId` | Manual Alpha trigger |
@@ -170,13 +175,7 @@ pnpm typecheck         # tsc --noEmit across all packages
 
 ## Known limitations
 
-- **Bayse REST from Cloudflare Workers is blocked** — their WAF returns 403 to CF egress IPs. We ship two workarounds:
-  1. Browser-side WS relay (included, works automatically when dashboard is open)
-  2. Manual seed script (run periodically from any residential IP to populate KV)
-
-  A Fly.io / Railway Node relay that proxies through a residential egress is
-  a clean long-term fix if Bayse doesn't allowlist CF egress.
-  See `.claude/bayse-proxy-email.md` for a drafted ask.
+- **Bayse from Cloudflare Workers is partially blocked** — REST returns 403 to CF egress IPs, and orderbook WS subscribes are silently dropped from many cloud egress IPs even when REST + the WS handshake pass. The shipped fix is `apps/relay` (Node, runs on any non-CF host) which performs both the REST seed and a 5s synthetic-orderbook poll. The browser bridge in `useBayseBridge.ts` remains as a development fallback. See `apps/relay/README.md` for VPS deploy steps (systemd + Windows NSSM unit included).
 
 - **Paystack transfers (payouts) require business-account activation** — the
   initialize/verify deposit flow works with a test key; transfers error until
